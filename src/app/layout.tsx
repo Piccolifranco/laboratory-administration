@@ -1,6 +1,13 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { createClient } from "@supabase/supabase-js";
+import { Database } from "../../types/supabase";
+
+export const supabase = createClient<Database>(
+  "https://lylnvhhzhyqlbbjgymws.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5bG52aGh6aHlxbGJiamd5bXdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTg4MjA3MzUsImV4cCI6MjAzNDM5NjczNX0.nFOeaQqh5WYlLlBKssniRY-NRmZt1Xp9yDfBnzaiGnA"
+);
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,7 +23,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <h1 className="text-4xl font-extrabold text-center text-gray-800 py-6 bg-white shadow-md border-b border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:text-white">
+          Administración de Historia Clínica - Anatomía Patológica General
+        </h1>
+        {children}
+      </body>
     </html>
   );
 }
