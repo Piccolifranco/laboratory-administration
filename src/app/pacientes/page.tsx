@@ -7,8 +7,8 @@ import { Suspense } from "react";
 import { InvoicesTableSkeleton } from "../ui/skeletons";
 import Dialog from "../ui/Dialog";
 import { NewPacienteDialogBody } from "../ui/NewPacienteDialog/NewPacienteDialogBody";
-import { supabase } from "../layout";
 import { Paciente } from "../../../types/supabase";
+import { supabase } from "../utils/supabaseClient";
 export default async function PacientesPage({
   params,
   searchParams,

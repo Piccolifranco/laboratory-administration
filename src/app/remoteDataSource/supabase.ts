@@ -4,7 +4,7 @@ import type { Database, Paciente } from "../../../types/supabase";
 
 export const supabase = createClient<Database>(
   "https://lylnvhhzhyqlbbjgymws.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx5bG52aGh6aHlxbGJiamd5bXdzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTg4MjA3MzUsImV4cCI6MjAzNDM5NjczNX0.nFOeaQqh5WYlLlBKssniRY-NRmZt1Xp9yDfBnzaiGnA"
+  process.env.NEXT_PUBLIC_SUPABASE_API_KEY ?? ""
 );
 
 export const addPaciente = async (data: Paciente) =>

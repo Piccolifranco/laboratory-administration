@@ -1,4 +1,4 @@
-import { supabase } from "@/app/layout";
+import { supabase } from "@/app/utils/supabaseClient";
 import { PacienteComponent } from "./paciente-component";
 import InvoiceStatus from "@/app/ui/status";
 import { format } from "date-fns";
