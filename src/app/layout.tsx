@@ -7,7 +7,7 @@ import { FaMicroscope } from "react-icons/fa";
 import Link from "next/link";
 
 const inter = Inter({ subsets: ["latin"] });
-export const createFetch =
+const createFetch =
   (options: Pick<RequestInit, "next" | "cache">) =>
   (url: RequestInfo | URL, init?: RequestInit) => {
     return fetch(url, {
