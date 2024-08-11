@@ -9,9 +9,8 @@ export default function Home() {
   const [password, setPassword] = useState("");
   const router = useRouter();
 
-  // Definir credenciales estáticas
-  const validUser = "gianella";
-  const validPassword = "curry123";
+  const validUser = process.env.NEXT_PUBLIC_USER;
+  const validPassword = process.env.NEXT_PUBLIC_PASSWORD;
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -19,10 +18,10 @@ export default function Home() {
     // Verificar las credenciales
     if (user === validUser && password === validPassword) {
       toast.success("Inicio de sesión exitoso");
-      // Redirigir a la página principal o realizar otras acciones necesarias
+
       setTimeout(() => {
         router.push("/pacientes");
-      }, 2000); // Redirigir después de 2 segundos para que se muestre el toast
+      }, 500);
     } else {
       toast.error("Correo electrónico o contraseña incorrectos");
     }

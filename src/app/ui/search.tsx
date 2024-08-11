@@ -9,17 +9,19 @@ export default function Search({ placeholder }: { placeholder: string }) {
   const pathname = usePathname();
   const { replace } = useRouter();
   const handleSearch = useDebouncedCallback((term) => {
-    const params = new URLSearchParams(searchParams);
-    if (term) {
-      params.set("query", term);
-    } else {
-      params.delete("query");
-    }
-    params.set("page", "1");
+    // Create a new URLSearchParams object without any existing params
+    const params = new URLSearchParams();
 
-    // De la siguiente manera reemplazo la url con la real que recibi del input y sus params
-    replace(`${pathname}?${params.toString()}`);
-  }, 500);
+    // Set the new search term
+    params.set("search", term);
+    if (!term) {
+      console.log({ DELETING: "fDSA" });
+      params.delete("search");
+    }
+
+    // Replace the current URL with the new search term
+    replace(`?${params.toString()}`);
+  }, 200);
   return (
     <div className="relative flex flex-1 flex-shrink-0">
       <label htmlFor="search" className="sr-only">
