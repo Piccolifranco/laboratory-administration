@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Svg,
   Path,
+  Image,
 } from "@react-pdf/renderer";
 import {
   Visitas,
@@ -21,6 +22,7 @@ import {
 const styles = StyleSheet.create({
   page: {
     padding: 30,
+    paddingBottom: 100,
   },
   section: {
     margin: 10,
@@ -67,9 +69,8 @@ const styles = StyleSheet.create({
   },
   svgContainer: {
     position: "absolute",
-    bottom: 30,
-    left: 30,
-    right: 30,
+    bottom: 0,
+    right: 0,
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
@@ -84,7 +85,7 @@ const PapDiagnosisComponent = ({
   paciente: Paciente;
   visita: PapVisita;
 }) => (
-  <Page style={styles.page}>
+  <Page wrap style={styles.page}>
     <View style={styles.headerBox}>
       <Text style={[styles.title, styles.bold]}>
         ANATOMIA PATOLOGICA GENERAL, PEDIATRICA Y CITOLOGIA
@@ -158,6 +159,12 @@ const PapDiagnosisComponent = ({
       </Text>
       <Text style={styles.content}>Notas: {visita[visita.type]?.notes}</Text>
     </View>
+    <View style={styles.svgContainer} fixed>
+      <Image
+        src="/images/microscope_logo.jpg"
+        style={{ width: 120, height: 100 }}
+      />
+    </View>
   </Page>
 );
 
@@ -168,7 +175,7 @@ const CepilladoDiagnosisComponent = ({
   paciente: Paciente;
   visita: Visitas;
 }) => (
-  <Page style={styles.page}>
+  <Page wrap style={styles.page}>
     <View style={styles.headerBox}>
       <Text style={[styles.title, styles.bold]}>
         ANATOMIA PATOLOGICA GENERAL, PEDIATRICA Y CITOLOGIA
@@ -238,13 +245,11 @@ const CepilladoDiagnosisComponent = ({
         Notas: {visita.cepilladoDiagnosis.notes}
       </Text>
     </View>
-    <View style={styles.svgContainer}>
-      <Svg viewBox="0 0 1060 897" style={{ width: 800, height: 800 }}>
-        <Path
-          d="M6009 7925 c-25 -13 -57 -70 -47 -80 3 -3 -11 -22 -31 -43 -30 -33 -35 -35 -79 -30 -66 9 -112 -9 -162 -62 -40 -42 -49 -58 -69 -124 -22 -73 -25 -101 -24 -230 0 -128 3 -157 22 -205 32 -84 62 -113 120 -113 68 0 84 18 98 107 19 124 27 144 73 160 23 8 57 22 77 30 23 10 37 21 37 30 0 7 15 18 33 24 18 7 67 36 108 65 57 40 83 51 105 47 28 -5 31 -10 41 -73 14 -95 26 -110 95 -110 59 0 80 22 97 103 19 88 24 94 71 94 52 0 80 24 111 96 22 50 29 84 28 131 -2 91 -40 177 -92 203 -33 16 -75 14 -116 -6 -36 -18 -65 -63 -65 -102 0 -22 -12 -25 -96 -25 -56 0 -100 -4 -99 -10 0 -6 -4 -10 -9 -10 -5 0 -13 -9 -18 -20 -8 -17 -13 -16 -67 9 -77 36 -126 45 -172 35 -19 -4 -49 0 -70 8 -44 18 -69 18 -98 1z"
-          fill="#000000"
-        />
-      </Svg>
+    <View style={styles.svgContainer} fixed>
+      <Image
+        src="/images/microscope_logo.jpg"
+        style={{ width: 120, height: 100 }}
+      />
     </View>
   </Page>
 );
@@ -258,7 +263,7 @@ const BiopsiaDiagnosisComponent = ({
   visita: BiopsiaVisita;
 }) => {
   return (
-    <Page style={styles.page}>
+    <Page wrap style={styles.page}>
       <View style={styles.headerBox}>
         <Text style={[styles.title, styles.bold]}>
           ANATOMIA PATOLOGICA GENERAL, PEDIATRICA Y CITOLOGIA
@@ -330,6 +335,12 @@ const BiopsiaDiagnosisComponent = ({
         </Text>
 
         <Text style={styles.content}>Notas: {visita[visita.type]?.notes}</Text>
+      </View>
+      <View style={styles.svgContainer} fixed>
+        <Image
+          src="/images/microscope_logo.jpg"
+          style={{ width: 120, height: 100 }}
+        />
       </View>
     </Page>
   );
