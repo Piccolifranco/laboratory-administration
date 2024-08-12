@@ -10,14 +10,16 @@ import { useRouter } from "next/navigation";
 export type NewVisitaDialogBody = {
   onSubmitHandler: (data: Visitas) => void;
   paciente: Paciente;
+  visita?: Visitas;
 };
 
 function NewVisitaDialogBody({
   onSubmitHandler,
   paciente,
+  visita,
 }: NewVisitaDialogBody) {
   const { register, watch, handleSubmit, reset } = useForm<Visitas>({
-    defaultValues,
+    defaultValues: visita || defaultValues,
   });
   const router = useRouter();
   const type = watch("type");

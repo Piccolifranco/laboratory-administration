@@ -1,12 +1,23 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Dialog from "@/app/ui/Dialog";
 import { updatePaciente } from "@/app/remoteDataSource/supabase";
-import { CreateVisita } from "@/app/ui/buttons";
+import {
+  CreateVisita,
+  DeletePaciente,
+  DownloadPDF,
+  EditPaciente,
+  EditVisita,
+} from "@/app/ui/buttons";
+import uniqid from "uniqid";
 import { NewVisitaDialogBody } from "@/app/ui/NewVisitaDialogBody/NewVisitaDialogBody";
 import InvoiceStatus from "@/app/ui/status";
 import { Paciente, Visitas } from "../../../../types/supabase";
 import { format } from "date-fns";
+import { CustomPopover } from "@/app/ui/Popover/Popover";
+import { pdf } from "@react-pdf/renderer";
+import DocumentoPDF from "@/app/ui/DocumentoPDF";
+import { useRemoveQueryParam } from "@/app/utils/removeQueryParams";
 export type PacienteProps = {
   paciente: Paciente;
   visitas: Visitas[];
@@ -14,16 +25,35 @@ export type PacienteProps = {
 };
 
 function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
+  const { removeQueryParams } = useRemoveQueryParam();
   const onSubmitVisita = (visita: Visitas) => {
-    updatePaciente(paciente.id, {
-      ...paciente,
-      visitas:
-        paciente.visitas && paciente.visitas.length > 0
-          ? [...paciente?.visitas, visita]
-          : [visita],
-    });
+    const visitaId = uniqid();
+    const visitaWithId = { ...visita, id: visitaId };
+    if (!visitaToEdit) {
+      updatePaciente(paciente.id, {
+        ...paciente,
+        visitas:
+          paciente.visitas && paciente.visitas.length > 0
+            ? [...paciente?.visitas, visitaWithId]
+            : [visitaWithId],
+      });
+    } else {
+      if (paciente.visitas) {
+        const toEditIndex = paciente?.visitas?.findIndex(
+          (pacienteVisita) => pacienteVisita.id === visitaToEdit.id
+        );
+        const visitasCopy = paciente?.visitas;
+        visitasCopy[toEditIndex] = visita;
+        updatePaciente(paciente.id, {
+          ...paciente,
+          visitas: visitasCopy,
+        });
+      }
+    }
   };
-
+  const [visitaToEdit, setVisitaToEdit] = useState<Visitas | undefined>(
+    undefined
+  );
   return (
     <div className="flex flex-col max-w-7xl mx-auto">
       <div className="my-2">
@@ -100,12 +130,30 @@ function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
                         status={visita.status}
                       />
                     </td>
-                    {/* <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div className="flex gap-3">
-                        <UpdatePaciente id={paciente?.id} />
-                        <DeletePaciente id={paciente?.id} />
+                        <EditVisita
+                          pacienteId={paciente.id}
+                          visita={visita}
+                          onEditVisita={() => {
+                            setVisitaToEdit(visita);
+                          }}
+                        />
+                        <DownloadPDF
+                          onClick={async () => {
+                            const blob = await pdf(
+                              <DocumentoPDF
+                                visita={visita}
+                                paciente={paciente}
+                              />
+                            ).toBlob();
+                            const pdfURL = URL.createObjectURL(blob);
+                            window.open(pdfURL, "_blank");
+                            removeQueryParams();
+                          }}
+                        />
                       </div>
-                    </td> */}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -117,6 +165,7 @@ function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
         dialogTitle="Nuevo informe"
         dialogBody={
           <NewVisitaDialogBody
+            visita={visitaToEdit}
             paciente={paciente}
             onSubmitHandler={onSubmitVisita}
           />

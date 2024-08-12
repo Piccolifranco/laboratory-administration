@@ -107,7 +107,6 @@ const Table = ({ pacientes, onEditPaciente }: TableProps) => {
                             paciente={paciente}
                             onEditPaciente={onEditPaciente}
                           />
-                          <CustomPopover />
                           <DeletePaciente onClick={handleDeletePaciente} />
                         </div>
                       </td>

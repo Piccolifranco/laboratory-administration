@@ -5,10 +5,11 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import { Paciente } from "../../../types/supabase";
-import { ButtonProps } from "@headlessui/react";
+import { Paciente, Visitas } from "../../../types/supabase";
+import { Button, ButtonProps } from "@headlessui/react";
 import Dialog from "./Dialog";
 import { useState } from "react";
+import { FaDownload } from "react-icons/fa";
 
 export function CreatePaciente() {
   return (
@@ -36,6 +37,28 @@ export function EditPaciente({
     <Link
       onClick={handleClick}
       href="/pacientes?editPaciente=true"
+      className="rounded-md border p-2 hover:bg-gray-100"
+    >
+      <PencilIcon className="w-5" />
+    </Link>
+  );
+}
+export function EditVisita({
+  visita,
+  onEditVisita,
+  pacienteId,
+}: {
+  visita: Visitas;
+  onEditVisita: (visita: Visitas) => void;
+  pacienteId: number;
+}) {
+  const handleClick = () => {
+    onEditVisita(visita);
+  };
+  return (
+    <Link
+      onClick={handleClick}
+      href={`/paciente/${pacienteId}?createVisita=true`}
       className="rounded-md border p-2 hover:bg-gray-100"
     >
       <PencilIcon className="w-5" />
@@ -89,6 +112,13 @@ export function DeletePaciente(props: ButtonProps) {
         <TrashIcon className="w-5" />
       </button>
     </>
+  );
+}
+export function DownloadPDF(props: ButtonProps) {
+  return (
+    <Button {...props} className="rounded-md border p-2 hover:bg-gray-100">
+      <FaDownload className="w-5" />
+    </Button>
   );
 }
 

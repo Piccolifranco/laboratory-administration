@@ -101,8 +101,14 @@ export const defaultValues: Visitas = {
   adenocaColonMucinosoDiagnosis: {
     micro:
       "Los cortes histológicos muestran proliferación tumoral conformada de glándulas atípicas de tipo intestinal, distorsionadas, irregulares, de diferentes dimensiones, revestidas de epitelio cilíndrico simple, seudo y estratificado, de macronúcleos hipercromáticos, irregulares, con pérdida de polaridad, nucleolos evidentes . En extensas áreas restos de glándulas con escaso revestimiento epitelial, luces ocupadas de material mucoide abundante, que se dispone en estroma Inter- glandular. Compromiso tumoral en capa musculara lisa del órgano, focos mínimos de infiltración en espacio subseroso. Bajo conteo mitótico. Intenso infiltrado inflamatorio en actividad, rico en polimorfonucleares neutrófilos, moderados células plasmáticas y linfocitos que se dispone alrededor de zona tumoral, reacción desmoplasica. Focos de necrosis y extensas áreas de lagunas hemáticas. Los cortes histológicos muestran en los extremos de la pieza remitida, tejido colónico de características conservadas.",
-    macro:
-      "Se recibe resección parcial de colon de 11 x 6cm. Superficie lisa y brillante con áreas parduscas, congestivas, numerosos apéndices epiplóicos de color amarillento en superficie. Se observa dilatación de la pieza en parte media de 6cm de diámetro mayor. Al corte, en parte media, tumoración de 5,5x4x4cm que ocupa el 85% de la luz del órgano, de color blanquecina, con áreas pardo-amarronadas, rojizas, de aspecto mamelonado, consistencia firme, áreas friables con material de aspecto mucoide en superficie, sin perforación de la pared del órgano. Límites de resección distal y proximal a 5,5 y 6cm respectivamente impresionan sin compromiso tumoral. ",
+    macro: `Se recibe resección parcial de colon de 11 x 6cm. Superficie lisa y brillante con áreas parduscas, 
+      
+      
+      
+      
+      
+      
+      congestivas, numerosos apéndices epiplóicos de color amarillento en superficie. Se observa dilatación de la pieza en parte media de 6cm de diámetro mayor. Al corte, en parte media, tumoración de 5,5x4x4cm que ocupa el 85% de la luz del órgano, de color blanquecina, con áreas pardo-amarronadas, rojizas, de aspecto mamelonado, consistencia firme, áreas friables con material de aspecto mucoide en superficie, sin perforación de la pared del órgano. Límites de resección distal y proximal a 5,5 y 6cm respectivamente impresionan sin compromiso tumoral. `,
     title: "Resección parcial de colon, examen histopatológico:",
     description:
       "Hallazgos histomorfologicos vinculables con Adenocarcinoma Mucinoso Moderadamente diferenciado de colon, tipo sésil, ulcerado de 5,5x4x4cm, sin perforación macroscópica. Márgenes de resección a 5,5 y 6cm de los márgenes distal y proximal libres de lesión. Presencia de invasión angiolinfatica. Invasión tumoral hasta subserosa. Estadio patológico: TNM: pT3, pN0.Dukes: Estadio B.",
