@@ -22,19 +22,18 @@ export default function Home() {
         "accessToken",
         signedInUser.data.session?.access_token
       );
+      toast.success("Inicio de sesión exitoso");
+
+      setTimeout(() => {
+        router.push("/pacientes");
+      }, 500);
+    } else {
+      toast.error("Correo electrónico o contraseña incorrectos");
     }
     console.log("ACCESS TOKEN: ", signedInUser.data);
 
     // Verificar las credenciales
     // if (user === validUser && password === validPassword) {
-    //   toast.success("Inicio de sesión exitoso");
-
-    //   setTimeout(() => {
-    //     router.push("/pacientes");
-    //   }, 500);
-    // } else {
-    //   toast.error("Correo electrónico o contraseña incorrectos");
-    // }
   };
 
   return (
