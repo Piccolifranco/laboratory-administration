@@ -4,28 +4,37 @@ import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Image from "next/image";
+import { supabase } from "./utils/supabaseClient";
 
 export default function Home() {
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
 
-  const validUser = process.env.NEXT_PUBLIC_USER;
-  const validPassword = process.env.NEXT_PUBLIC_PASSWORD;
-
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
+    const signedInUser = await supabase.auth.signInWithPassword({
+      email: user,
+      password: password,
+    });
+    if (signedInUser.data.session?.access_token) {
+      localStorage.setItem(
+        "accessToken",
+        signedInUser.data.session?.access_token
+      );
+    }
+    console.log("ACCESS TOKEN: ", signedInUser.data);
 
     // Verificar las credenciales
-    if (user === validUser && password === validPassword) {
-      toast.success("Inicio de sesión exitoso");
+    // if (user === validUser && password === validPassword) {
+    //   toast.success("Inicio de sesión exitoso");
 
-      setTimeout(() => {
-        router.push("/pacientes");
-      }, 500);
-    } else {
-      toast.error("Correo electrónico o contraseña incorrectos");
-    }
+    //   setTimeout(() => {
+    //     router.push("/pacientes");
+    //   }, 500);
+    // } else {
+    //   toast.error("Correo electrónico o contraseña incorrectos");
+    // }
   };
 
   return (

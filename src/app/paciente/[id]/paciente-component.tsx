@@ -25,6 +25,8 @@ export type PacienteProps = {
 };
 
 function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
+  const reorderedVisitas = visitas.reverse();
+  console.log(reorderedVisitas);
   const { removeQueryParams } = useRemoveQueryParam();
   const onSubmitVisita = (visita: Visitas) => {
     const visitaId = uniqid();
@@ -105,7 +107,7 @@ function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {visitas?.map((visita) => (
+                {reorderedVisitas?.map((visita) => (
                   <tr key={paciente?.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {paciente?.firstName}, {paciente?.lastName}
