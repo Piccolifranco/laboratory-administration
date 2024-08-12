@@ -19,11 +19,11 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <div className="flex justify-center items-center gap-10 dark:border-gray-700 dark:bg-gray-900">
+        <div className="flex justify-center items-center gap-10 border-gray-700 bg-gray-900">
           <Link href="/pacientes">
             <FaMicroscope className="text-white text-4xl" />
           </Link>
-          <h1 className="text-4xl font-extrabold text-center text-gray-800 py-6 shadow-md  dark:text-white">
+          <h1 className="text-4xl font-extrabold text-center text-white py-6 shadow-md">
             Administración de Historia Clínica - Anatomía Patológica General
           </h1>
         </div>

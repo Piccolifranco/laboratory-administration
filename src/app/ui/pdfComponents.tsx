@@ -157,7 +157,7 @@ const PapDiagnosisComponent = ({
       <Text style={styles.content}>
         Pap clase: {visita[visita.type]?.class}
       </Text>
-      <Text style={styles.content}>Notas: {visita[visita.type]?.notes}</Text>
+      <Text style={styles.content}>Nota: {visita[visita.type]?.notes}</Text>
     </View>
     <View style={styles.svgContainer} fixed>
       <Image
@@ -242,7 +242,7 @@ const CepilladoDiagnosisComponent = ({
       <Text style={[styles.title, styles.bold]}>DIAGNOSTICO</Text>
       <Text style={styles.content}>{visita.cepilladoDiagnosis.title}</Text>
       <Text style={styles.content}>
-        Notas: {visita.cepilladoDiagnosis.notes}
+        Nota: {visita.cepilladoDiagnosis.notes}
       </Text>
     </View>
     <View style={styles.svgContainer} fixed>
@@ -334,7 +334,7 @@ const BiopsiaDiagnosisComponent = ({
           Diagnostico: {visita[visita.type]?.description}
         </Text>
 
-        <Text style={styles.content}>Notas: {visita[visita.type]?.notes}</Text>
+        <Text style={styles.content}>Nota: {visita[visita.type]?.notes}</Text>
       </View>
       <View style={styles.svgContainer} fixed>
         <Image
