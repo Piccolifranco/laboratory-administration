@@ -237,7 +237,7 @@ const CepilladoDiagnosisComponent = ({
 
       <Text style={[styles.title, styles.bold]}>DIAGNOSTICO DESCRIPTIVO</Text>
       <Text style={styles.content}>
-        Flora: {visita.cepilladoDiagnosis.description}
+        {visita.cepilladoDiagnosis.description}
       </Text>
 
       <Text style={[styles.title, styles.bold]}>DIAGNOSTICO</Text>
