@@ -68,6 +68,8 @@ export default function Dialog({
                     </div>
                   </div>
                 </div>
+
+                <div>{dialogFooter}</div>
               </DialogPanel>
             </TransitionChild>
           </div>

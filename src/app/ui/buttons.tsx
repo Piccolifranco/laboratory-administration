@@ -85,7 +85,7 @@ export function DeletePaciente(props: ButtonProps) {
           </div>
         }
         dialogFooter={
-          <div className="flex gap-4 justify-center w-[100%]">
+          <div className="flex py-8 bg-gray-100 gap-4 justify-center w-[100%]">
             <button
               onClick={closeModal}
               className="rounded-md flex border p-2 text-black bg-slate-200 hover:bg-slate-300  items-center gap-2"
