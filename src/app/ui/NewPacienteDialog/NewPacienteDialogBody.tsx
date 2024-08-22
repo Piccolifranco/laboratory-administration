@@ -76,15 +76,12 @@ function NewPacienteDialogBody() {
             Edad
           </label>
           <input
-            {...register("age", { required: true, valueAsNumber: true })}
+            {...register("age", { valueAsNumber: true })}
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             id="age"
             placeholder="Ingrese su edad"
             type="number"
           />
-          {errors.age && (
-            <span className="text-red-600">Edad es requerida</span>
-          )}
         </div>
         <div className="space-y-2 flex flex-col w-full items-start">
           <label
@@ -94,13 +91,12 @@ function NewPacienteDialogBody() {
             DNI
           </label>
           <input
-            {...register("dni", { required: true, valueAsNumber: true })}
+            {...register("dni", { valueAsNumber: true })}
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             id="dni"
-            placeholder="Ingrese su DNI"
+            placeholder="Ingrese su DNIaaaa"
             type="number"
           />
-          {errors.dni && <span className="text-red-600">DNI es requerido</span>}
         </div>
         <div className="space-y-2 flex flex-col w-full items-start">
           <label

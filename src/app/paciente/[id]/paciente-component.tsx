@@ -13,7 +13,7 @@ import uniqid from "uniqid";
 import { NewVisitaDialogBody } from "@/app/ui/NewVisitaDialogBody/NewVisitaDialogBody";
 import InvoiceStatus from "@/app/ui/status";
 import { Paciente, Visitas } from "../../../../types/supabase";
-import { format } from "date-fns";
+import { format, toDate } from "date-fns";
 import { CustomPopover } from "@/app/ui/Popover/Popover";
 import { pdf } from "@react-pdf/renderer";
 import DocumentoPDF from "@/app/ui/DocumentoPDF";
@@ -26,7 +26,6 @@ export type PacienteProps = {
 
 function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
   const reorderedVisitas = visitas.reverse();
-  console.log(reorderedVisitas);
   const { removeQueryParams } = useRemoveQueryParam();
   const onSubmitVisita = (visita: Visitas) => {
     const visitaId = uniqid();
@@ -107,57 +106,59 @@ function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {reorderedVisitas?.map((visita) => (
-                  <tr key={paciente?.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {paciente?.firstName}, {paciente?.lastName}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {paciente?.doctor
-                        ? paciente.doctor
-                        : visita.secondaryDoctor}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {visita[visita.type]?.title}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {paciente?.visitas && visita.date
-                        ? `${format(new Date(visita.date), "dd/MM/yyyy")}`
-                        : ""}
-                    </td>
+                {reorderedVisitas?.map((visita) => {
+                  return (
+                    <tr key={paciente?.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        {paciente?.firstName}, {paciente?.lastName}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {paciente?.doctor
+                          ? paciente.doctor
+                          : visita.secondaryDoctor}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {visita[visita.type]?.title}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {paciente?.visitas && visita.date
+                          ? `${format(new Date(visita.date), "dd/MM/yyyy")}`
+                          : ""}
+                      </td>
 
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <InvoiceStatus
-                        amount={visita.amount}
-                        status={visita.status}
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div className="flex gap-3">
-                        <EditVisita
-                          pacienteId={paciente.id}
-                          visita={visita}
-                          onEditVisita={() => {
-                            setVisitaToEdit(visita);
-                          }}
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <InvoiceStatus
+                          amount={visita.amount}
+                          status={visita.status}
                         />
-                        <DownloadPDF
-                          onClick={async () => {
-                            const blob = await pdf(
-                              <DocumentoPDF
-                                visita={visita}
-                                paciente={paciente}
-                              />
-                            ).toBlob();
-                            const pdfURL = URL.createObjectURL(blob);
-                            window.open(pdfURL, "_blank");
-                            removeQueryParams();
-                          }}
-                        />
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div className="flex gap-3">
+                          <EditVisita
+                            pacienteId={paciente.id}
+                            visita={visita}
+                            onEditVisita={() => {
+                              setVisitaToEdit(visita);
+                            }}
+                          />
+                          <DownloadPDF
+                            onClick={async () => {
+                              const blob = await pdf(
+                                <DocumentoPDF
+                                  visita={visita}
+                                  paciente={paciente}
+                                />
+                              ).toBlob();
+                              const pdfURL = URL.createObjectURL(blob);
+                              window.open(pdfURL, "_blank");
+                              removeQueryParams();
+                            }}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

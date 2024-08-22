@@ -17,6 +17,7 @@ import {
   PapVisita,
   BiopsiaVisita,
 } from "../../../types/supabase"; // Importa tus tipos definidos
+import { format } from "date-fns";
 
 // Define estilos para el PDF
 const styles = StyleSheet.create({
@@ -69,7 +70,7 @@ const styles = StyleSheet.create({
   },
   svgContainer: {
     position: "absolute",
-    bottom: 0,
+    bottom: 20,
     right: 0,
     display: "flex",
     justifyContent: "center",
@@ -123,7 +124,7 @@ const PapDiagnosisComponent = ({
         <View style={styles.flex}>
           <Text style={styles.content}>Material: {visita.material}</Text>
           <Text style={styles.content}>
-            Fecha: {new Date(visita.date).toLocaleDateString()}
+            Fecha: {format(visita.date, "dd/MM/yyyy")}
           </Text>
         </View>
         <View style={styles.flex}>
@@ -161,7 +162,7 @@ const PapDiagnosisComponent = ({
     </View>
     <View style={styles.svgContainer} fixed>
       <Image
-        src="/images/microscope_logo.jpg"
+        src="/images/microscope_logo.png"
         style={{ width: 120, height: 100 }}
       />
     </View>
@@ -247,7 +248,7 @@ const CepilladoDiagnosisComponent = ({
     </View>
     <View style={styles.svgContainer} fixed>
       <Image
-        src="/images/microscope_logo.jpg"
+        src="/images/microscope_logo.png"
         style={{ width: 120, height: 100 }}
       />
     </View>
@@ -338,7 +339,7 @@ const BiopsiaDiagnosisComponent = ({
       </View>
       <View style={styles.svgContainer} fixed>
         <Image
-          src="/images/microscope_logo.jpg"
+          src="/images/microscope_logo.png"
           style={{ width: 120, height: 100 }}
         />
       </View>
