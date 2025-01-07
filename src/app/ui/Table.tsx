@@ -1,10 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { DeletePaciente, EditPaciente } from "./buttons";
 import { Paciente } from "../../../types/supabase";
 import { format } from "date-fns";
 import Link from "next/link";
 import { deletePaciente } from "../remoteDataSource/supabase";
-import { CustomPopover } from "./Popover/Popover";
 import { useRouter } from "next/navigation";
 
 type TableProps = {
@@ -12,8 +11,62 @@ type TableProps = {
   onEditPaciente: (paciente: Paciente) => void;
 };
 
+type SortConfig = {
+  key: keyof Paciente | "ultimaVisita";
+  direction: "asc" | "desc";
+};
+
 const Table = ({ pacientes, onEditPaciente }: TableProps) => {
   const router = useRouter();
+  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+
+  const sortedPacientes = React.useMemo(() => {
+    if (!sortConfig) return pacientes;
+
+    const sorted = [...pacientes];
+    sorted.sort((a, b) => {
+      const key = sortConfig.key;
+
+      let aValue =
+        key === "ultimaVisita"
+          ? a.visitas?.[0]?.date
+            ? new Date(a.visitas[0].date)
+            : null
+          : a[key as keyof Paciente] || "";
+      let bValue =
+        key === "ultimaVisita"
+          ? b.visitas?.[0]?.date
+            ? new Date(b.visitas[0].date)
+            : null
+          : b[key as keyof Paciente] || "";
+
+      // Handle null/undefined values
+      if (aValue === null || aValue === undefined)
+        return sortConfig.direction === "asc" ? 1 : -1;
+      if (bValue === null || bValue === undefined)
+        return sortConfig.direction === "asc" ? -1 : 1;
+
+      // Sort by Date or other data types
+      if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return sorted;
+  }, [pacientes, sortConfig]);
+
+  const handleSort = (key: keyof Paciente | "ultimaVisita") => {
+    setSortConfig((prev) => {
+      if (prev?.key === key) {
+        return {
+          key,
+          direction: prev.direction === "asc" ? "desc" : "asc",
+        };
+      }
+      return { key, direction: "asc" };
+    });
+  };
+
   return (
     <div className="flex flex-col">
       <div className="overflow-x-auto">
@@ -22,42 +75,30 @@ const Table = ({ pacientes, onEditPaciente }: TableProps) => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-100">
                 <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider"
-                  >
-                    Nombre y Apellido
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider"
-                  >
-                    Edad
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider"
-                  >
-                    DNI
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider"
-                  >
-                    Doctor/a
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider"
-                  >
-                    Obra Social
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider"
-                  >
-                    Última Visita
-                  </th>
+                  {[
+                    { key: "lastName", label: "Nombre y Apellido" },
+                    { key: "age", label: "Edad" },
+                    { key: "dni", label: "DNI" },
+                    { key: "doctor", label: "Doctor/a" },
+                    { key: "obraSocial", label: "Obra Social" },
+                    { key: "ultimaVisita", label: "Última Visita" },
+                  ].map(({ key, label }) => (
+                    <th
+                      key={key}
+                      scope="col"
+                      className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider cursor-pointer"
+                      onClick={() =>
+                        handleSort(key as keyof Paciente | "ultimaVisita")
+                      }
+                    >
+                      {label}
+                      {sortConfig?.key === key && (
+                        <span>
+                          {sortConfig.direction === "asc" ? " ▲" : " ▼"}
+                        </span>
+                      )}
+                    </th>
+                  ))}
                   <th
                     scope="col"
                     className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider"
@@ -67,12 +108,10 @@ const Table = ({ pacientes, onEditPaciente }: TableProps) => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {pacientes.map((paciente) => {
+                {sortedPacientes.map((paciente) => {
                   const handleDeletePaciente = async () => {
                     await deletePaciente(paciente.id);
                     router.refresh();
-
-                    // window.location.reload();
                   };
                   return (
                     <tr key={paciente.id} className="hover:bg-gray-50">
