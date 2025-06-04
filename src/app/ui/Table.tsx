@@ -6,9 +6,12 @@ import Link from "next/link";
 import { deletePaciente } from "../remoteDataSource/supabase";
 import { useRouter } from "next/navigation";
 
+import PatientTableSkeleton from "./PatientTableSkeleton";
+
 type TableProps = {
   pacientes: Paciente[];
   onEditPaciente: (paciente: Paciente) => void;
+  loading?: boolean;
 };
 
 type SortConfig = {
@@ -16,7 +19,7 @@ type SortConfig = {
   direction: "asc" | "desc";
 };
 
-const Table = ({ pacientes, onEditPaciente }: TableProps) => {
+const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
   const router = useRouter();
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
@@ -108,7 +111,11 @@ const Table = ({ pacientes, onEditPaciente }: TableProps) => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {sortedPacientes.map((paciente) => {
+                {sortedPacientes.length === 0 && loading ? (
+                  <PatientTableSkeleton />
+                ) : (
+                  <>
+                    {sortedPacientes.map((paciente) => {
                   const handleDeletePaciente = async () => {
                     await deletePaciente(paciente.id);
                     router.refresh();
@@ -151,7 +158,10 @@ const Table = ({ pacientes, onEditPaciente }: TableProps) => {
                       </td>
                     </tr>
                   );
-                })}
+                    })}
+                    {loading && sortedPacientes.length > 0 && <PatientTableSkeleton />}
+                  </>
+                )}
               </tbody>
             </table>
           </div>
