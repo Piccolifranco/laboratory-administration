@@ -25,19 +25,22 @@ export type PacienteProps = {
 };
 
 function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
-  const reorderedVisitas = visitas.reverse();
+  const [localVisitas, setLocalVisitas] = React.useState<Visitas[]>(visitas);
+
+  const reorderedVisitas = [...localVisitas].reverse();
   const { removeQueryParams } = useRemoveQueryParam();
-  const onSubmitVisita = (visita: Visitas) => {
+  const onSubmitVisita = async (visita: Visitas) => {
     const visitaId = uniqid();
     const visitaWithId = { ...visita, id: visitaId };
     if (!visitaToEdit) {
-      updatePaciente(paciente.id, {
+      const newVisitas = paciente.visitas && paciente.visitas.length > 0
+        ? [...paciente?.visitas, visitaWithId]
+        : [visitaWithId];
+      await updatePaciente(paciente.id, {
         ...paciente,
-        visitas:
-          paciente.visitas && paciente.visitas.length > 0
-            ? [...paciente?.visitas, visitaWithId]
-            : [visitaWithId],
+        visitas: newVisitas,
       });
+      setLocalVisitas(newVisitas);
     } else {
       if (paciente.visitas) {
         const toEditIndex = paciente?.visitas?.findIndex(
@@ -45,10 +48,11 @@ function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
         );
         const visitasCopy = paciente?.visitas;
         visitasCopy[toEditIndex] = visita;
-        updatePaciente(paciente.id, {
+        await updatePaciente(paciente.id, {
           ...paciente,
           visitas: visitasCopy,
         });
+        setLocalVisitas([...visitasCopy]);
       }
     }
   };

@@ -33,7 +33,7 @@ function NewPacienteDialogBody() {
 
   return (
     <div className="w-full mx-auto" data-v0-t="card">
-      <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+      <form onSubmit={handleSubmit(onSubmit)} className="pt-6 pr-6 pl-6 pb-4 space-y-4">
         <div className="space-y-2 flex flex-col w-full items-start">
           <label
             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"

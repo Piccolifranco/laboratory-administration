@@ -26,6 +26,14 @@ function NewVisitaDialogBody({
   const status = watch("status");
 
   const { removeQueryParams } = useRemoveQueryParam();
+  // Save only (no download)
+  const onSaveOnly: SubmitHandler<Visitas> = (data) => {
+    onSubmitHandler(data);
+    removeQueryParams();
+    router.refresh();
+  };
+
+  // Save and download
   const onSubmit: SubmitHandler<Visitas> = async (data) => {
     onSubmitHandler(data);
     const blob = await pdf(
@@ -115,10 +123,10 @@ function NewVisitaDialogBody({
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className=" bg-card text-card-foreground shadow-sm w-full max-w-[90%] mx-auto"
+      className="bg-card text-card-foreground shadow-sm w-full max-w-[90%] mx-auto flex flex-col"
       data-v0-t="card"
     >
-      <div className="p-6 space-y-4 grid grid-cols-3 gap-x-20">
+      <div className="p-4 space-y-2 grid grid-cols-3 gap-x-8">
         <div className="flex flex-col gap-5 mt-4">
           <div className="space-y-2">
             <label
@@ -791,12 +799,22 @@ function NewVisitaDialogBody({
             </div>
           )}
       </div>
-      <button
-        type="submit"
-        className="mt-4 px-4 py-2 bg-amber-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
-      >
-        Guardar y descargar
-      </button>
+      {/* Sticky footer for action buttons */}
+      <div className="sticky bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-md flex gap-4 py-4 px-6 z-10 justify-center">
+        <button
+          type="button"
+          className="px-4 py-2 bg-amber-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2"
+          onClick={handleSubmit(onSaveOnly)}
+        >
+          Guardar
+        </button>
+        <button
+          type="submit"
+          className="px-4 py-2 bg-amber-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2"
+        >
+          Guardar y descargar
+        </button>
+      </div>
     </form>
   );
 }
