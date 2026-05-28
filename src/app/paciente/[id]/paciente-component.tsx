@@ -9,7 +9,6 @@ import {
   EditPaciente,
   EditVisita,
 } from "@/app/ui/buttons";
-import uniqid from "uniqid";
 import { NewVisitaDialogBody } from "@/app/ui/NewVisitaDialogBody/NewVisitaDialogBody";
 import InvoiceStatus from "@/app/ui/status";
 import { Paciente, Visitas } from "../../../../types/supabase";
@@ -30,7 +29,7 @@ function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
   const reorderedVisitas = [...localVisitas].reverse();
   const { removeQueryParams } = useRemoveQueryParam();
   const onSubmitVisita = async (visita: Visitas) => {
-    const visitaId = uniqid();
+    const visitaId = crypto.randomUUID();
     const visitaWithId = { ...visita, id: visitaId };
     if (!visitaToEdit) {
       const newVisitas = paciente.visitas && paciente.visitas.length > 0

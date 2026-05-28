@@ -10,10 +10,11 @@ export default async function PacientePage({
   params,
   searchParams,
 }: {
-  params: { id: string };
-  searchParams: { createVisita: string };
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ createVisita: string }>;
 }) {
-  const pacienteId = params.id;
+  const { id: pacienteId } = await params;
+  const { createVisita } = await searchParams;
   const fetchedPaciente = await supabase
     .from("pacientes")
     .select()
@@ -21,7 +22,7 @@ export default async function PacientePage({
     .single();
   const paciente = fetchedPaciente.data;
   const visitas = fetchedPaciente.data?.visitas;
-  const modalOpen = searchParams.createVisita === "true";
+  const modalOpen = createVisita === "true";
   return (
     paciente && (
       <PacienteComponent

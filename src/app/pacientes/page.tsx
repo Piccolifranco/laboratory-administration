@@ -9,15 +9,14 @@ import Dialog from "../ui/Dialog";
 import { NewPacienteDialogBody } from "../ui/NewPacienteDialog/NewPacienteDialogBody";
 import { Paciente } from "../../../types/supabase";
 import { supabase } from "../utils/supabaseClient";
-export default function PacientesPage({
-  params,
+export default async function PacientesPage({
   searchParams,
 }: {
-  params: { slug: string };
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const isCreatePacienteOpen = searchParams.createPaciente === "true";
-  const isEditPacienteOpen = searchParams.editPaciente === "true";
+  const sp = await searchParams;
+  const isCreatePacienteOpen = sp.createPaciente === "true";
+  const isEditPacienteOpen = sp.editPaciente === "true";
 
   return (
     <Pacientes
