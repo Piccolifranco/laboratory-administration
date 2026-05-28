@@ -76,10 +76,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  signatureContainer: {
+    position: "absolute",
+    bottom: 20,
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
   signature: {
     width: 150,
-    marginTop: 30,
-    alignSelf: "flex-end",
   },
 });
 
@@ -164,6 +169,9 @@ const PapDiagnosisComponent = ({
         Pap clase: {visita[visita.type]?.class}
       </Text>
       <Text style={styles.content}>Nota: {visita[visita.type]?.notes}</Text>
+    </View>
+    <View style={styles.signatureContainer} fixed>
+      <Image src="/images/doctor_signature.png" style={styles.signature} />
     </View>
     <View style={styles.svgContainer} fixed>
       <Image
