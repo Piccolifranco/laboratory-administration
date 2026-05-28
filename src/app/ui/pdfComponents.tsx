@@ -259,6 +259,9 @@ const CepilladoDiagnosisComponent = ({
         Nota: {visita.cepilladoDiagnosis.notes}
       </Text>
     </View>
+    <View style={styles.signatureContainer} fixed>
+      <Image src="/images/doctor_signature.png" style={styles.signature} />
+    </View>
     <View style={styles.svgContainer} fixed>
       <Image
         src="/images/microscope_logo.png"
