@@ -76,6 +76,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
+  signature: {
+    width: 150,
+    marginTop: 30,
+    alignSelf: "flex-end",
+  },
 });
 
 // Componente para el diagnóstico de Papanicolau
