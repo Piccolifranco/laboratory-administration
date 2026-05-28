@@ -5,7 +5,7 @@ export const defaultValues: Visitas = {
   secondaryDoctor: "",
   material: "Frotis cervico vaginal",
   colpo: "",
-  protocol: "C2025-",
+  protocol: `C${new Date().getFullYear()}-`,
   status: "pending",
   type: "pap",
   amount: 0,
