@@ -2,6 +2,10 @@
   "name": "laboratory-administration",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@11.4.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -13,6 +17,7 @@
     "@heroicons/react": "^2.2.0",
     "@react-pdf/renderer": "^4.5.1",
     "@supabase/supabase-js": "^2.106.2",
+    "clsx": "^2.1.1",
     "date-fns": "^4.3.0",
     "next": "^16.2.6",
     "react": "^19.2.6",
