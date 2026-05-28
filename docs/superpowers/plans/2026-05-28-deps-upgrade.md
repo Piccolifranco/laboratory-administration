@@ -1,20 +1,22 @@
-# Dependency Upgrade Implementation Plan
+# Dependency Upgrade Implementation Plan (REVISED)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans (inline) — many tasks require visual inspection of UI/PDF rendering, codemod-output review, and judgment calls that aren't safe to dispatch to a fresh subagent. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Bring all dependencies of the laboratory-administration project up to current, vulnerability-free versions while preserving observable app behavior.
 
-**Architecture:** Eight sequential tasks, each one commit. Order chosen so a regression at task N is attributable to that task. All work on `feature/deps-upgrade` (already cut off `development`). Package manager stays npm throughout — the pnpm migration is a separate, later PR.
+**Architecture:** Seven sequential tasks on `feature/deps-upgrade` (already cut off `development`). **Single-install strategy:** the only `npm install` on this branch happens in Task 2, against a `package.json` that was already bulk-edited to all-target versions in Task 1. This ensures `node_modules/` never materializes in a vulnerable state. Subsequent tasks (3 onward) edit source code only — no further package version changes.
 
 **Tech Stack:** Next.js (14.2.22 → 16.x), React (18 → 19), TypeScript (5.8.3 → 5.9.3), Tailwind CSS (3 → 4), ESLint (8 → 10, flat config), @react-pdf/renderer (3 → 4), date-fns (3 → 4), Supabase JS SDK, zustand, react-toastify, react-infinite-scroll-component.
 
-**Verification model:** This project has no test suite. Verification at every task is: (a) `npm run build` succeeds, (b) `npm run dev` starts cleanly, (c) the smoke-test critical path passes manually, (d) `npm audit` is consulted at the end. The smoke-test critical path is defined once in Task 0 and referenced by name in every later task.
+**Verification model:** This project has no test suite. Verification at every task is: (a) `npm run build` succeeds, (b) `npm run dev` starts cleanly, (c) the smoke-test critical path passes manually, (d) `npm audit` is consulted at Task 2 and again at Task 7. The smoke-test critical path is defined in Task 0 and referenced by name in every later task.
+
+**Why no v3 PDF baseline:** the previous plan revision tried to save reference PDFs from the pre-upgrade app for visual diffing against the post-upgrade `@react-pdf/renderer` v4 output. That required running the app on the current vulnerable tree, which we now forbid. Without that baseline, the PDF check in Task 6 is "does the v4 output look correct" rather than "does it match v3 exactly". This is acceptable: the next sub-project edits this file anyway (the doctor's signature), so a fresh v4 baseline is what we'll build on.
 
 ---
 
 ## Task 0: Pre-flight — capture starting state
 
-**Files:** none modified. This task only records the baseline so we can compare later.
+**Files:** none modified.
 
 **Smoke-test critical path** (referenced from every later task):
 1. `npm run dev` starts without errors.
@@ -23,7 +25,7 @@
 4. The search bar filters patients (debounced).
 5. Click into a patient. Their detail page renders with their list of visitas.
 6. Click "Crear visita". The dialog opens. Close it.
-7. Generate a PDF for an existing visit of each report type: **Pap**, **Cepillado**, **Biopsia**. All three must render visually identical to the saved reference PDFs (see step 4 below).
+7. Generate a PDF for an existing visit of each report type the data covers: **Pap**, **Cepillado**, **Biopsia**. Each must render: header box with clinic name + doctor + address; confidentiality block; patient fields (name, age, doctor, protocol, material, date, colpo, OS); the diagnosis-type-specific body; and the microscope-logo image at bottom-right.
 
 - [ ] **Step 1: Confirm branch and clean tree**
 
@@ -35,69 +37,110 @@ nothing to commit, working tree clean
 feature/deps-upgrade
 ```
 
-- [ ] **Step 2: Confirm starting Node + npm versions and record them**
+- [ ] **Step 2: Confirm Node version meets Next 16 minimum**
 
-Run: `node --version && npm --version`
-Expected: `v24.x.x` or newer, `npm 10.x` or newer.
-If Node is older than v20, stop and install Node 20 LTS or 24 before proceeding (Next 16 requires Node 18.18+, but Node 24 is what's already on this machine).
+Run: `node --version`
+Expected: `v20.x` or newer. Next 16 requires Node 18.18+, but the user is on Node 24.
 
-- [ ] **Step 3: Record baseline `npm audit` for later comparison**
+If Node is older than v20 LTS, stop and install Node 20 LTS or newer before proceeding.
 
-Run: `npm audit --json > /tmp/audit-before.json 2>&1; npm audit | head -5`
-Expected (approximate):
-```
-# npm audit report
-...
-N vulnerabilities (X moderate, Y high)
-```
-Save the count for comparison after Task 8.
+- [ ] **Step 3: Record baseline `npm audit` count for the PR description**
 
-- [ ] **Step 4: Generate and save reference PDFs for each report type**
+Run: `npm audit 2>&1 | tail -3`
+Expected output ending with something like: `N vulnerabilities (X low, Y moderate, Z high)`.
 
-This is the visual-baseline for the @react-pdf/renderer 3→4 bump in Task 6.
+Note that this audit reads the current `package-lock.json` directly — it does NOT install anything. Save the line for later inclusion in the PR description.
 
-- Start `npm run dev`.
-- Log in, navigate to a patient that has at least one of each report type (Pap, Cepillado, Biopsia). If no single patient covers all three, use three different patients.
-- Click "Descargar PDF" for one visit of each type.
-- Save the three downloaded PDFs to `/tmp/baseline-pap.pdf`, `/tmp/baseline-cepillado.pdf`, `/tmp/baseline-biopsia.pdf`.
-- Stop `npm run dev`.
+- [ ] **Step 4: Confirm `node_modules/` is absent or empty**
 
-If the data does not include all three report types, document which ones are missing and skip the comparison for those — but flag it in the Task 6 verification.
+Run (on Windows PowerShell): `Test-Path node_modules`
+Or (on bash / git-bash): `ls -d node_modules 2>/dev/null || echo "absent"`
+Expected: `False` (PowerShell) or `absent` (bash).
+
+If `node_modules/` exists and is populated, this means a previous install happened. Stop and discuss with the user before proceeding — the single-install plan assumes a fresh state.
 
 - [ ] **Step 5: No commit** (Task 0 produces no file changes)
 
 ---
 
-## Task 1: Dead-dep cleanup + uniqid → crypto.randomUUID()
+## Task 1: Bulk `package.json` edit and replace `uniqid` in code
 
-**Why this task is first:** It is the smallest change with the largest noise-reduction effect. Removing five unused packages narrows the surface area of every later upgrade step (fewer transitive resolutions, fewer peer-dep warnings, smaller `node_modules`).
+**Why this task is structured this way:** all version bumps and removals land in a single `package.json` edit, then `package-lock.json` will be deleted in Task 2 and regenerated by a single `npm install` against the already-upgraded `package.json`. This ensures the first `node_modules/` materialized on disk contains the safe versions — never the current vulnerable ones.
 
 **Files:**
-- Modify: `package.json` (remove 6 dependency entries)
-- Modify: `src/app/paciente/[id]/paciente-component.tsx:12,33` (replace `uniqid` usage)
+- Modify: `package.json` (full rewrite of dependencies and devDependencies)
+- Modify: `src/app/paciente/[id]/paciente-component.tsx:12,33` (remove `uniqid` import, replace `uniqid()` call)
 
-- [ ] **Step 1: Verify dead deps truly have no imports**
+**NO INSTALL in this task.** The install happens in Task 2.
 
-Run from project root:
+- [ ] **Step 1: Write the new `package.json`**
+
+Replace the entire content of `package.json` with this exact content:
+
+```json
+{
+  "name": "laboratory-administration",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@headlessui/react": "^2.2.10",
+    "@heroicons/react": "^2.2.0",
+    "@react-pdf/renderer": "^4.5.1",
+    "@supabase/supabase-js": "^2.106.2",
+    "date-fns": "^4.3.0",
+    "next": "^16.2.6",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-hook-form": "^7.76.1",
+    "react-icons": "^5.6.0",
+    "react-infinite-scroll-component": "^7.2.0",
+    "react-toastify": "^11.1.0",
+    "use-debounce": "^10.1.1",
+    "zustand": "^5.0.13"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
+    "@tailwindcss/postcss": "^4.3.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^10.4.0",
+    "eslint-config-next": "^16.2.6",
+    "postcss": "^8.5.15",
+    "supabase": "^2.101.0",
+    "tailwindcss": "^4.3.0",
+    "typescript": "~5.9.3"
+  }
+}
 ```
-git grep -nE "from ['\"](yup|zod|date-fns-tz|@hookform/resolvers)['\"]" -- src/ || echo "no matches found"
-git grep -n "uniqid" -- src/
-```
-Expected:
-- First command: `no matches found`
-- Second command: one match, in `src/app/paciente/[id]/paciente-component.tsx`
 
-If either is unexpected, stop and update the plan with the new findings before proceeding.
+**Why each change:**
+- **Removed entirely:** `yup`, `zod`, `@hookform/resolvers`, `date-fns-tz`, `uniqid`, `@types/uniqid` — none are imported in `src/`.
+- **Production majors bumped:** `next`, `react`, `react-dom`, `@react-pdf/renderer`, `date-fns`, `react-toastify`, `react-infinite-scroll-component`, `zustand`.
+- **Production minors bumped:** `@headlessui/react`, `@heroicons/react`, `react-hook-form`, `react-icons`, `use-debounce`, `@supabase/supabase-js`.
+- **Dev majors bumped:** `eslint`, `eslint-config-next`, `tailwindcss`, `supabase` (CLI), `@types/react`, `@types/react-dom`. `@types/node` is bumped to `^22` (Node 22 LTS types; the user runs Node 24 but `@types/node` v22 covers the relevant API surface).
+- **New dev deps added:** `@eslint/eslintrc` (for the ESLint v9+ flat-config compatibility shim used in Task 4), `@tailwindcss/postcss` (replaces the old `tailwindcss` PostCSS plugin in v4; used in Task 5).
+- **TypeScript pinned with `~`:** `~5.9.3` allows patch updates within 5.9 but never crosses to 5.10 or 6 unless we explicitly bump.
+- **`@react-pdf/renderer` left in production deps** even though it's only used at runtime for PDF generation in the browser — keeping the existing classification.
 
-- [ ] **Step 2: Replace `uniqid` import and usage in paciente-component.tsx**
+- [ ] **Step 2: Update `paciente-component.tsx` — remove the `uniqid` import**
 
 File: `src/app/paciente/[id]/paciente-component.tsx`
 
-Change line 12 from:
+Delete line 12 entirely:
 ```ts
 import uniqid from "uniqid";
 ```
-to: **delete the line entirely**.
+
+- [ ] **Step 3: Update `paciente-component.tsx` — replace the `uniqid()` call**
+
+File: `src/app/paciente/[id]/paciente-component.tsx`
 
 Change line 33 from:
 ```ts
@@ -108,72 +151,138 @@ to:
 const visitaId = crypto.randomUUID();
 ```
 
-`crypto.randomUUID()` is available in the browser globals (Node 19+ also exposes it globally) — no import needed. The only caller passes the ID to `updatePaciente` for storage in Supabase; the format change from `uniqid`'s base-36 timestamp to a UUIDv4 string does not affect storage or lookups (the `visita.id` is only used for find-by-id within an array, which works for any string format).
+`crypto.randomUUID()` is globally available in Node 19+ and all modern browsers — no import required. The format change (uniqid's base-36 timestamp → a UUIDv4 string) is harmless: `visita.id` is only used for find-by-id within a JSON array and works for any string format.
 
-- [ ] **Step 3: Remove the five dead deps from package.json**
+- [ ] **Step 4: Verify the file edits via git diff**
 
-Run:
-```
-npm uninstall yup zod @hookform/resolvers date-fns-tz uniqid @types/uniqid
-```
-Expected: command exits 0. `package.json` no longer contains any of: `yup`, `zod`, `@hookform/resolvers`, `date-fns-tz`, `uniqid`, `@types/uniqid`. `package-lock.json` regenerates.
+Run: `git diff --stat`
+Expected: two files changed — `package.json` (significant lines changed) and `src/app/paciente/[id]/paciente-component.tsx` (2 lines removed, 1 line added). `package-lock.json` should NOT yet show changes (we have not run install).
 
-- [ ] **Step 4: Verify build still passes**
-
-Run: `npm run build`
-Expected: build succeeds, no missing-module errors. Note that `next.config.mjs` has `typescript.ignoreBuildErrors: true` set, so type errors are not surfaced by `npm run build`. Also run:
-```
-npx tsc --noEmit
-```
-Expected: no errors related to the removed packages or the `uniqid` replacement. (Pre-existing type errors elsewhere are out of scope — record them but do not fix in this task.)
-
-- [ ] **Step 5: Smoke-test the changed code path**
-
-Run: `npm run dev`. Log in, navigate to a patient, click "Crear visita", fill the form, submit. Confirm the new visit appears with a UUIDv4-looking id in the URL bar / inspector if you can inspect the writes (open Supabase dashboard or read it back). The exact id format doesn't matter — only that submission succeeds without runtime error.
-
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit (no install yet)**
 
 ```
-git add package.json package-lock.json src/app/paciente/[id]/paciente-component.tsx
-git commit -m "chore: drop dead deps and replace uniqid with crypto.randomUUID
+git add package.json src/app/paciente/[id]/paciente-component.tsx
+git commit -m "chore: bulk-bump deps to target versions and drop dead deps
+
+Edits package.json directly with the full set of target versions for
+the upgrade -- Next 16, React 19, Tailwind 4, ESLint 10 flat config,
+@react-pdf/renderer 4, date-fns 4, plus the long-tail bumps. Adds
+@eslint/eslintrc and @tailwindcss/postcss for the flat-config + v4
+PostCSS plugin work in later tasks. TypeScript pinned to ~5.9.3
+(holding at 5.x, TS 6 deferred).
 
 Removes yup, zod, @hookform/resolvers, date-fns-tz, uniqid, and
 @types/uniqid -- none were imported in src/. Replaces the single
-uniqid() call in paciente-component with crypto.randomUUID(), a
-platform standard available on Node 19+ and all modern browsers.
+uniqid() call in paciente-component with crypto.randomUUID().
+
+No install is performed in this commit -- the lockfile is regenerated
+in the next commit so that the first node_modules/ on disk reflects
+only the upgraded (safe) tree.
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
 ---
 
-## Task 2: Next 14 → 16 + React 18 → 19
+## Task 2: Single install on the upgraded tree, audit, commit lockfile
 
-**Why this task is second:** It is the largest single change. Doing it on a freshly-cleaned tree (Task 1 just finished) minimizes the chance that codemod confusion is caused by dead-dep noise.
+**Why this is the only fresh install:** with `package.json` already at all-target versions (from Task 1), running `npm install` here produces a `node_modules/` and a `package-lock.json` that contain only the upgraded, safe versions. There is no intermediate state where vulnerable code sits on disk.
 
 **Files:**
-- Modify: `package.json` (next, react, react-dom, @types/react, @types/react-dom)
-- Modify: `src/app/paciente/[id]/page.tsx` (async params/searchParams)
-- Possibly modify: `next.config.mjs`, any caching-related code (codemod-driven)
+- Delete: `package-lock.json` (the existing vulnerable lockfile)
+- Create: `package-lock.json` (regenerated by `npm install`)
 
-- [ ] **Step 1: Run the official Next.js codemod**
+- [ ] **Step 1: Delete the existing lockfile**
 
-Run:
+Run: `rm package-lock.json` (bash) or `Remove-Item package-lock.json` (PowerShell)
+Expected: file removed. `git status` shows the deletion.
+
+- [ ] **Step 2: Run the single install**
+
+Run: `npm install`
+Expected:
+- Command exits 0.
+- Output includes the count of installed packages.
+- Possibly some peer-dependency warnings — record them, do NOT act yet. Most are benign at this scale (eslint plugins not yet declaring eslint 10 as peer, etc.).
+- `node_modules/` and a new `package-lock.json` are created.
+
+If `npm install` exits non-zero with a peer-dep conflict that prevents resolution (an `ERESOLVE` error), the most likely cause is one of the major version bumps having a peer-dep range that doesn't include another bumped major. Read the error carefully:
+- If the conflict is between `eslint-config-next@16` and `eslint@10`, try `npm install --legacy-peer-deps` once and document why.
+- If the conflict is between any React 18-pinning package and React 19, the fix is to identify the offending package and bump it further or pin it.
+
+Stop and discuss with the user before applying `--legacy-peer-deps` — that flag should be a deliberate decision, not a default.
+
+- [ ] **Step 3: Run `npm audit` immediately**
+
+Run: `npm audit`
+Expected:
+- Zero HIGH severity findings.
+- Zero MODERATE severity findings.
+- Possibly some LOW findings — record them in the PR description, do not block.
+
+If HIGH or MODERATE remain:
+- Run `npm audit` (without `--json`) and read the human-readable report.
+- Identify which package introduces the remaining vuln and whether it's a direct or transitive dep.
+- For a direct dep: bump it further (likely a newer minor is out since the plan was written).
+- For a transitive dep: try `npm audit fix` (which may bump intermediate packages within satisfied ranges). If that doesn't clear it, consider `npm dedupe` or `overrides` in `package.json`.
+- Document the resolution in the commit message.
+
+- [ ] **Step 4: Verify build works**
+
+Run: `npm run build`
+Expected: build completes successfully. Some warnings about deprecated Next 14 APIs are likely — these will be fixed in Task 3. The key is that the build does not *fail*; warnings are acceptable here.
+
+If the build fails with errors about:
+- `params` or `searchParams` not being a Promise → expected, fix is in Task 3.
+- Missing `tailwindcss` postcss plugin → expected, fix is in Task 5.
+- Missing ESLint config / flat config error → ESLint errors typically don't fail the build; if it's a build-time lint hook, defer the fix to Task 4.
+
+Other failures: stop and investigate.
+
+- [ ] **Step 5: Verify `npm run dev` starts**
+
+Run: `npm run dev`
+Expected: the dev server starts and logs something like `Ready in X ms - Local: http://localhost:3000`.
+
+Open `http://localhost:3000` in a browser. Login page may render. Do NOT yet expect the full critical path to work — the dynamic route still uses sync `params` (fixed in Task 3) and the modal backdrop still uses `bg-opacity-75` (fixed in Task 5).
+
+What you ARE verifying here:
+- The Next 16 / React 19 binary runs without crashing on import.
+- No fatal module-resolution errors.
+- The CSS loads (Tailwind 4's @import will work via the v3-compat layer until Task 5 swaps the directive).
+
+Stop the dev server with Ctrl+C.
+
+- [ ] **Step 6: Commit the lockfile**
+
 ```
-npx -y @next/codemod@latest upgrade latest
+git add package-lock.json
+git commit -m "chore: regenerate lockfile from upgraded package.json
+
+Single fresh install on the post-bump package.json. The resulting
+node_modules/ and lockfile contain only the upgraded versions --
+the previous vulnerable lockfile is gone. npm audit shows zero
+HIGH / MODERATE findings.
+
+Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
-Follow the prompts. Accept all transformations. The codemod will:
-- Bump `next`, `react`, `react-dom`, `@types/react`, `@types/react-dom` in `package.json`.
-- Apply the `next-async-request-api` codemod (params/searchParams → Promise).
-- Apply caching default codemods if applicable.
 
-Expected: command exits 0 with a summary of files modified.
+---
 
-- [ ] **Step 2: Manually verify the codemod handled the dynamic route correctly**
+## Task 3: Next 16 source-code migration (`params` / `searchParams` → Promise)
+
+**Why this task:** Next 16 (since 15) requires dynamic route `params` and `searchParams` to be awaited Promises. The package version bumps already landed in Tasks 1-2; this task only updates the source code to match the new API.
+
+**Files:**
+- Modify: `src/app/paciente/[id]/page.tsx`
+
+- [ ] **Step 1: Update the dynamic route page**
 
 File: `src/app/paciente/[id]/page.tsx`
 
-The pre-upgrade file (lines 9–24) was:
+Replace the entire function signature and body opening (lines 9 through the destructuring of params/searchParams).
+
+Find:
 ```ts
 export default async function PacientePage({
   params,
@@ -193,7 +302,7 @@ export default async function PacientePage({
   const modalOpen = searchParams.createVisita === "true";
 ```
 
-The post-upgrade file must look like:
+Replace with:
 ```ts
 export default async function PacientePage({
   params,
@@ -214,74 +323,68 @@ export default async function PacientePage({
   const modalOpen = createVisita === "true";
 ```
 
-If the codemod did this — proceed. If not, hand-edit the file to match exactly the above.
+- [ ] **Step 2: Search for any other route files that read `params` or `searchParams`**
 
-- [ ] **Step 3: Search for any other route files that read params or searchParams**
+Run: `git grep -nE "params|searchParams" -- "src/app/**/page.tsx" "src/app/**/layout.tsx"`
 
-Run:
-```
-git grep -nE "(^|[^a-zA-Z])(params|searchParams)([^a-zA-Z]|$)" -- "src/app/**/page.tsx" "src/app/**/layout.tsx"
-```
-Expected: only the `[id]/page.tsx` route should show usage. If other routes appear, repeat Step 2's pattern for each.
+Expected: only `src/app/paciente/[id]/page.tsx` shows usage. If other route files appear that destructure `params` or `searchParams` as plain objects, apply the same Promise-await transformation.
 
-- [ ] **Step 4: Reinstall and build**
+Note: matches inside the body of the file we just fixed are OK — what we're scanning for is the *type annotation* `params: { ... }` or `searchParams: { ... }` (sync object form).
 
-Run:
-```
-rm -rf node_modules
-npm install
-npm run build
-```
-Expected: install completes (may show some peer-warning noise — record but do not act unless install fails). Build succeeds.
+- [ ] **Step 3: Build to confirm types compile**
 
-If build fails, the most common cause at this jump is: a `'use client'` boundary that previously relied on synchronous params now being silently broken because `'use client'` components cannot await the Promise — server components must `await` before passing the resolved values to client components. The codebase's pattern already does this (server `page.tsx` resolves and passes plain data to client `PacienteComponent`), so this should be fine, but verify.
+Run: `npm run build`
+Expected: build succeeds. Specifically, no errors about `params` not being awaitable or being a Promise of the wrong shape.
 
-- [ ] **Step 5: Smoke-test the critical path** (from Task 0)
+- [ ] **Step 4: Smoke-test the patient detail route**
 
-Run `npm run dev`. Execute steps 1–6 of the critical path. For step 7 (PDF generation), generate ONE PDF of any single type — full PDF comparison comes in Task 6 after `@react-pdf/renderer` itself is upgraded.
+Run: `npm run dev`. Log in, navigate to a patient detail page (`/paciente/<some-id>`). The page must render with the patient's data and visits list. Also try `/paciente/<id>?createVisita=true` — the dialog must open.
 
-Pay special attention to:
-- Patient detail page renders correctly (this is the `[id]` route we just modified).
-- The "Crear visita" query-param flow still works (`?createVisita=true` opens the dialog).
+If the patient page renders blank or hangs, the most likely cause is a missed `await`. Re-check Step 1.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```
-git add -A
-git commit -m "feat: upgrade Next.js 14 to 16 and React 18 to 19
+git add src/app/paciente/[id]/page.tsx
+git commit -m "feat(next): await params and searchParams in [id] route
 
-Runs the @next/codemod upgrade tool. Converts the [id] dynamic route's
-params/searchParams to the awaited Promise form required by Next 15+.
+Next 15 made dynamic route params and searchParams Promises;
+Next 16 (now installed) enforces it. The page is the only route
+in src/app that reads either, so this is the only file affected.
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
 ---
 
-## Task 3: ESLint 8 → 10 (flat config) + eslint-config-next 16
+## Task 4: ESLint flat config migration
 
-**Why this task is third:** Now that Next 16 is in, `eslint-config-next@16` is the right pairing. This step clears the HIGH-severity audit findings on the typescript-eslint and @next/eslint-plugin-next chains.
+**Why this task:** ESLint 10 (installed in Task 2) only supports flat config. The legacy `.eslintrc.json` must be replaced.
 
 **Files:**
 - Delete: `.eslintrc.json`
 - Create: `eslint.config.mjs`
-- Modify: `package.json` (eslint, eslint-config-next)
 
-- [ ] **Step 1: Delete the legacy ESLint config**
+- [ ] **Step 1: Inspect what `eslint-config-next@16` exports**
 
-Run: `rm .eslintrc.json`
+Run: `node -e "console.log(JSON.stringify(Object.keys(require('eslint-config-next/package.json').exports || {}), null, 2))"`
 
-- [ ] **Step 2: Install ESLint 10 and the current eslint-config-next**
+If the output contains `"./flat"` (or any path that looks like a flat-config export), prefer the direct-import form in Step 2. Otherwise use the `FlatCompat` form.
 
-Run:
+- [ ] **Step 2: Create the flat config file**
+
+Create `eslint.config.mjs` with one of the following contents:
+
+**If `eslint-config-next` exposes `./flat`:**
+```js
+import next from "eslint-config-next/flat";
+
+export default [
+  ...(Array.isArray(next) ? next : [next]),
+];
 ```
-npm install --save-dev eslint@latest eslint-config-next@latest
-```
-Expected: both pulled in at their latest stable; check `package.json` shows `eslint` at `10.x` and `eslint-config-next` at `16.x`.
 
-- [ ] **Step 3: Create the flat-config file**
-
-Create file `eslint.config.mjs` with the following contents:
+**If `eslint-config-next` does NOT expose a flat preset (use FlatCompat):**
 ```js
 import { FlatCompat } from "@eslint/eslintrc";
 import { dirname } from "path";
@@ -299,113 +402,95 @@ export default [
 ];
 ```
 
-This uses `@eslint/eslintrc`'s `FlatCompat` shim to wrap `next/core-web-vitals` as a flat-config block. `eslint-config-next@16` ships a native flat-config export at `eslint-config-next/flat`, but `FlatCompat` is the path with the broadest compatibility if `eslint-config-next/flat` is missing or renamed at the time of execution. If `eslint-config-next` exposes a flat preset directly, switch to:
-```js
-import next from "eslint-config-next/flat";
-export default [next];
-```
+`@eslint/eslintrc` was added to devDependencies in Task 1, so this works without any further install.
 
-Verify which path applies by running:
-```
-node -e "console.log(Object.keys(require('eslint-config-next/package.json').exports || {}))"
-```
-If the output contains `"./flat"`, use the direct-import form. Otherwise use `FlatCompat`.
+- [ ] **Step 3: Delete the legacy config**
 
-- [ ] **Step 4: Install @eslint/eslintrc only if FlatCompat path is taken**
+Run: `rm .eslintrc.json` (bash) or `Remove-Item .eslintrc.json` (PowerShell)
 
-If using the `FlatCompat` form, run:
-```
-npm install --save-dev @eslint/eslintrc
-```
-
-- [ ] **Step 5: Run lint**
+- [ ] **Step 4: Run lint**
 
 Run: `npm run lint`
-Expected: completes. Any new findings are most likely to be:
-- `react/no-unescaped-entities` warnings on Spanish text containing apostrophes.
-- `@next/next/no-img-element` warnings — there are existing `<img>` usages that should ideally be `<Image>` but are not in scope for this branch.
-- Warnings on unused variables in form-related files where dead-dep imports used to live.
+Expected: lint runs to completion (may report warnings or errors but does not crash with a config error).
 
-For each finding, decide:
+If lint crashes with "no eslint config found" or "extends not valid in flat config": the wrong form was chosen in Step 2 — switch to the other form.
+
+For each NEW lint finding (compared to pre-upgrade), classify:
 - **Fix inline** if the change is one line and clearly correct.
-- **Disable rule for that file** with a comment if the lint rule is not appropriate for the existing code (e.g., `@next/next/no-img-element` in PDF-related code).
-- **Leave** if it is pre-existing tech debt not caused by this upgrade.
+- **Disable rule for that file** with a comment if the rule is inappropriate (e.g., `@next/next/no-img-element` in PDF code that uses `<img>` intentionally).
+- **Leave** if it is pre-existing tech debt unrelated to this upgrade.
 
-The goal is not zero warnings; it is "lint runs to completion with no new errors caused by this upgrade."
+Existing warnings on Spanish-text apostrophes (`react/no-unescaped-entities`) or non-Next `<img>` usages are acceptable to leave — they predate this upgrade.
 
-- [ ] **Step 6: Run build to confirm nothing regressed**
+- [ ] **Step 5: Confirm build still passes**
 
 Run: `npm run build`
 Expected: build succeeds.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 6: Commit**
 
 ```
-git add -A
-git commit -m "feat: migrate ESLint to v10 flat config
+git add eslint.config.mjs .eslintrc.json
+git commit -m "feat(eslint): migrate to flat config for ESLint 10
 
 Replaces .eslintrc.json with eslint.config.mjs using the
-next/core-web-vitals preset. Bumps eslint to 10.x and eslint-config-next
-to 16.x. Clears the HIGH-severity audit findings on the typescript-eslint
-and @next/eslint-plugin-next chains.
+next/core-web-vitals preset. Clears the HIGH-severity audit findings
+on the @next/eslint-plugin-next and typescript-eslint chains.
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
+(The `git add .eslintrc.json` line records the deletion.)
+
 ---
 
-## Task 4: Tailwind 3 → 4
+## Task 5: Tailwind v4 config migration
 
-**Why this task is fourth:** Tailwind 4's PostCSS plugin and CSS-first config are independent of the Next/React/ESLint chain we just upgraded, but doing it after those means any Tailwind-related build error is unambiguously Tailwind's.
+**Why this task:** Tailwind 4 and `@tailwindcss/postcss` are already installed (Task 2). This task swaps the PostCSS plugin name, converts `globals.css` to the v4 single-import directive, and replaces the one `bg-opacity-75` usage with v4's slash syntax.
 
 **Files:**
-- Modify: `package.json` (tailwindcss, add @tailwindcss/postcss)
-- Modify: `postcss.config.mjs` (plugin rename)
-- Modify: `src/app/globals.css` (v3 directives → v4 single @import)
-- Modify: `src/app/ui/Dialog.tsx:40` (`bg-opacity-75` → slash syntax)
-- Possibly modify: `tailwind.config.ts` (the upgrade tool may migrate to a CSS `@theme` block, but the config is so minimal it may be left alone)
+- Modify: `postcss.config.mjs`
+- Modify: `src/app/globals.css`
+- Modify: `src/app/ui/Dialog.tsx:40`
 
-- [ ] **Step 1: Run the official Tailwind upgrade tool**
+- [ ] **Step 1: Update `postcss.config.mjs`**
 
-Run:
-```
-npx -y @tailwindcss/upgrade@latest
-```
-Follow the prompts. Accept transformations. The tool will:
-- Update `package.json` to install `tailwindcss@^4` and `@tailwindcss/postcss`.
-- Rewrite `postcss.config.mjs` to use `@tailwindcss/postcss` instead of `tailwindcss`.
-- Convert `src/app/globals.css` from the three `@tailwind base/components/utilities;` directives to a single `@import "tailwindcss";`.
-- Possibly migrate `tailwind.config.ts` content into a `@theme` block in CSS, or leave the config file as-is using the v3-compat path.
+File: `postcss.config.mjs`
 
-- [ ] **Step 2: Verify postcss config is correct**
-
-File: `postcss.config.mjs` — must contain something equivalent to:
+Replace its content with:
 ```js
+/** @type {import('postcss-load-config').Config} */
 const config = {
   plugins: {
     "@tailwindcss/postcss": {},
   },
 };
+
 export default config;
 ```
 
-If the upgrade tool left it pointing at `tailwindcss: {}`, hand-edit it to the above.
+(Change: replaced `tailwindcss: {}` with `"@tailwindcss/postcss": {}`.)
 
-- [ ] **Step 3: Verify globals.css uses v4 syntax**
+- [ ] **Step 2: Update `src/app/globals.css`**
 
-File: `src/app/globals.css` — must start with:
+File: `src/app/globals.css`
+
+Replace its content with:
 ```css
 @import "tailwindcss";
+
+.overflow-hidden {
+  overflow: hidden !important;
+}
 ```
-(not the three `@tailwind` directives.)
 
-Keep the `.overflow-hidden { overflow: hidden !important; }` rule that was already there.
+(Change: replaced the three `@tailwind base/components/utilities;` directives with the single `@import "tailwindcss";` form. Kept the existing `.overflow-hidden` override unchanged.)
 
-- [ ] **Step 4: Hand-fix the bg-opacity-75 usage**
+- [ ] **Step 3: Update `src/app/ui/Dialog.tsx`**
 
-File: `src/app/ui/Dialog.tsx:40`
+File: `src/app/ui/Dialog.tsx`
 
-Change:
+Change line 40 from:
 ```tsx
 <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" />
 ```
@@ -414,262 +499,126 @@ to:
 <div className="fixed inset-0 bg-gray-500/75 transition-opacity" />
 ```
 
-This is the modal backdrop. In v4, `bg-opacity-*` utilities still work via the v3-compat layer, but the slash syntax (`bg-{color}/{opacity}`) is the canonical v4 form. Doing this explicitly avoids relying on the compat layer for a single utility.
+This is the modal backdrop. In v4 the `bg-opacity-*` utilities still work through the v3-compat layer, but the slash syntax is the v4-native form. Explicitly converting this one usage avoids relying on the compat shim for the only place we used it.
+
+- [ ] **Step 4: Consider `tailwind.config.ts`**
+
+The existing `tailwind.config.ts` adds two custom gradient backgrounds. Verify if they are actually used:
+
+Run: `git grep -nE "gradient-radial|gradient-conic" -- src/`
+
+- If **no matches:** the custom theme additions are dead weight. Delete `tailwind.config.ts` entirely. Tailwind 4 finds its content sources automatically and the file is optional when there's no custom config.
+- If **matches found:** leave `tailwind.config.ts` as-is — Tailwind 4 still supports the v3 JS config format via the v3-compat layer (a deprecation warning may appear in the build but is harmless).
+
+Decide based on the grep result and document the choice in the commit message.
 
 - [ ] **Step 5: Build**
 
 Run: `npm run build`
-Expected: build succeeds. If it fails with a PostCSS error about `tailwindcss` being a plugin, return to Step 2 — the postcss config did not get updated.
+Expected: build succeeds. If it fails with a PostCSS error mentioning `tailwindcss` as a plugin, return to Step 1 — `postcss.config.mjs` did not get updated.
 
 - [ ] **Step 6: Visual smoke-test**
 
-Run `npm run dev`. Walk through the critical path (Task 0). Pay specific visual attention to:
-- The modal backdrop (the `bg-gray-500/75` div) — should be a translucent gray overlay, not jet-black or fully opaque.
-- The login page background and the heading bar at the top of every page (which uses `bg-gray-900`).
-- The gradient utilities (`bg-gradient-radial`, `bg-gradient-conic`) — verify they still work if used anywhere. (Grep first: `git grep -nE "gradient-radial|gradient-conic" -- src/`. If unused, no action.)
-- Patient table row hovers and the search-bar focus ring.
+Run `npm run dev`. Walk through the full critical path (Task 0). Pay specific visual attention to:
+- **Modal backdrop** (the `bg-gray-500/75` div) — should be a translucent gray overlay, not jet-black or fully opaque.
+- **Page header bar** (`bg-gray-900`) — should be dark gray.
+- **Patient table row hovers and search-bar focus rings** — verify they still respond to interaction.
+- **The login page background**.
+
+If any color renders very differently than expected, the most likely cause is a v3-utility that Tailwind 4 dropped or renamed. Use the v4 migration guide to find the equivalent.
 
 - [ ] **Step 7: Commit**
 
 ```
-git add -A
-git commit -m "feat: migrate Tailwind CSS 3 to 4
+git add postcss.config.mjs src/app/globals.css src/app/ui/Dialog.tsx
+# add tailwind.config.ts only if it was modified or deleted in Step 4
+git status
+# review the staged changes, then:
+git commit -m "feat(tailwind): migrate to v4 (postcss plugin, @import, slash syntax)
 
-Runs @tailwindcss/upgrade; switches PostCSS plugin to
-@tailwindcss/postcss; converts globals.css to the single @import
-'tailwindcss' form; replaces the one bg-opacity-75 usage with the
-v4 slash syntax (bg-gray-500/75).
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
-```
-
----
-
-## Task 5: date-fns 3 → 4
-
-**Files:**
-- Modify: `package.json` (date-fns)
-
-- [ ] **Step 1: Bump date-fns**
-
-Run: `npm install date-fns@latest`
-Expected: `package.json` shows `date-fns` at `^4.x`.
-
-- [ ] **Step 2: Verify the only used functions still have compatible signatures**
-
-Confirm imports are still valid:
-```
-npx -y grep -rn "from ['\"]date-fns['\"]" src/
-```
-Expected: four files import `format` (and one also imports `toDate`). Both functions have identical signatures in v4 vs v3 for our usage (passing a `Date` and a format string).
-
-- [ ] **Step 3: Build**
-
-Run: `npm run build`
-Expected: build succeeds.
-
-- [ ] **Step 4: Smoke-test date rendering**
-
-Run `npm run dev`. Navigate to a patient detail page that has at least one visit. The visit list must show dates formatted as `dd/MM/yyyy` (the format used in `pdfComponents.tsx` and `paciente-component.tsx`). If dates render as "Invalid Date" or as a different format, stop and investigate.
-
-- [ ] **Step 5: Commit**
-
-```
-git add package.json package-lock.json
-git commit -m "feat: upgrade date-fns 3 to 4
-
-Only format() and toDate() are used; signatures unchanged in v4.
-date-fns-tz was already removed in the dead-dep cleanup (Task 1).
+Switches the PostCSS plugin to @tailwindcss/postcss; replaces the
+three @tailwind directives in globals.css with the v4 single
+@import 'tailwindcss' form; converts the one bg-opacity-75 usage
+in Dialog.tsx to the v4-native bg-gray-500/75 slash syntax.
 
 Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
 ```
 
 ---
 
-## Task 6: @react-pdf/renderer 3 → 4
+## Task 6: Full critical-path smoke test
 
-**Why this task is sixth (not earlier):** The signature feature (next sub-project) will be built on this file, so a clean v4 baseline is more valuable than minimizing per-PR risk. We isolate the bump in its own commit so any rendering regression is unambiguously attributable.
+**Why this task:** Tasks 3, 4, and 5 each smoke-tested only their own area. This task runs the entire critical path end-to-end to catch any interaction between the changes.
 
-**Files:**
-- Modify: `package.json` (@react-pdf/renderer)
+**Files:** none modified. This task is verification only.
 
-- [ ] **Step 1: Bump the package**
+- [ ] **Step 1: Clean dev start**
 
-Run: `npm install @react-pdf/renderer@latest`
-Expected: `package.json` shows `@react-pdf/renderer` at `^4.x`.
+Stop any running dev server, then run: `npm run dev`
+Expected: clean start, no errors in the console.
 
-- [ ] **Step 2: Verify imports still resolve**
+- [ ] **Step 2: Execute the full critical path from Task 0**
 
-Run:
-```
-git grep -n "from ['\"]@react-pdf/renderer['\"]" -- src/
-```
-Expected: only `src/app/ui/pdfComponents.tsx` and `src/app/ui/DocumentoPDF.tsx` import from the package, using `Document`, `Page`, `Text`, `View`, `StyleSheet`, `Svg`, `Path`, `Image`. All these are stable v3 → v4 exports.
+Walk through all seven steps of the critical path. For step 7 (PDF generation), generate at least one PDF of each report type that's available in the data (Pap, Cepillado, Biopsia).
 
-- [ ] **Step 3: Build**
+Verify visually:
+- Each PDF renders with the correct header box, confidentiality block, patient fields, type-specific body, and microscope-logo image at bottom-right.
+- Text rendering looks correct (no overflow, no missing glyphs).
+- Page breaks happen at sensible places.
 
-Run: `npm run build`
-Expected: build succeeds.
+Without a pre-upgrade baseline PDF for comparison, the bar is "does it look correct" not "is it pixel-identical to v3".
 
-- [ ] **Step 4: Side-by-side PDF visual diff**
+- [ ] **Step 3: Auth flow recheck**
 
-Run `npm run dev`. For each report type (Pap, Cepillado, Biopsia), generate a PDF using the *same patient and visit* as the baseline PDFs saved in Task 0 Step 4. Save them to `/tmp/post-upgrade-pap.pdf`, `/tmp/post-upgrade-cepillado.pdf`, `/tmp/post-upgrade-biopsia.pdf`.
+The Supabase JS SDK jumped from 2.43 → 2.106 — many releases. Specifically test:
+- Log out (clear the tab or `localStorage.removeItem('accessToken')`).
+- Log in with valid credentials → success toast → redirect to `/pacientes`.
+- Refresh `/pacientes` → still authenticated, list still loads.
+- Open browser devtools → Application → Local Storage → confirm `accessToken` is set on the origin.
 
-Open each pair side-by-side (any PDF viewer). Look for:
-- Font rendering: weight, size, kerning.
-- Page breaks: same content on the same page.
-- The absolutely-positioned microscope-logo image at bottom-right of every page.
-- Table-like flex rows for patient details (nombre/edad, doctor/protocolo, etc.).
+- [ ] **Step 4: Form flow recheck**
 
-If anything visibly differs, document the difference. Some minor regressions (e.g., subpixel font hinting changes) may be acceptable. A major regression (logo missing, page break in wrong place, text overflowing) is a stop-and-investigate condition.
+- Click "Nuevo Paciente" or equivalent — fill a form, submit. The new patient appears.
+- Open an existing patient, click "Crear visita", fill the form, submit. The new visit appears.
 
-If a baseline PDF for a given report type was missing in Task 0, skip that comparison and note the gap.
+- [ ] **Step 5: Toast and infinite-scroll recheck**
 
-- [ ] **Step 5: Commit**
+- Trigger a login failure (wrong password) — error toast appears in the expected position.
+- On `/pacientes`, scroll to the bottom of the list. Confirm more rows load (infinite scroll).
 
-```
-git add package.json package-lock.json
-git commit -m "feat: upgrade @react-pdf/renderer 3 to 4
-
-Visually validated against baseline PDFs for Pap, Cepillado, and
-Biopsia report types. Gives us a clean v4 baseline before adding the
-doctor's signature to pdfComponents.tsx in the next sub-project.
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
-```
+- [ ] **Step 6: No commit** (Task 6 produces no file changes; if any code change is required to fix a smoke-test failure, treat it as a hotfix commit at the task where the regression was introduced and re-run this task)
 
 ---
 
-## Task 7: Long-tail bumps
+## Task 7: Final verification and PR
 
-**Files:** `package.json` only.
+**Files:** none modified.
 
-Each sub-step is one `npm install` followed by build + targeted smoke. Combine into ONE commit unless a specific package breaks — then split that one out.
-
-- [ ] **Step 1: Bump Supabase JS SDK**
-
-Run: `npm install @supabase/supabase-js@latest`
-Smoke-test specifically:
-- Log out (close tab or clear cookies).
-- Log in via the login page. Confirm the toast appears and `/pacientes` loads.
-- Reload `/pacientes` directly. Confirm it still loads (token persistence).
-- Open browser devtools → Application → Local Storage → confirm `accessToken` is set.
-
-The current code uses `supabase.auth.signInWithPassword` and `supabase.from(...).select()/insert()/update()/delete()` — all of which are stable across the 2.43 → 2.106 range. If any auth flow breaks, stop and inspect the Supabase SDK CHANGELOG for that version range.
-
-- [ ] **Step 2: Bump zustand**
-
-Run: `npm install zustand@latest`
-Smoke-test: the zustand store at `src/app/zuztand/store.js` is a simple `create((set) => ({ ... }))` pattern. It is currently imported nowhere significant (verify: `git grep -n "useLoginStore" -- src/`). If unused, the bump is mechanical. If used, log in and confirm the store's `email` survives a reload.
-
-- [ ] **Step 3: Bump react-toastify**
-
-Run: `npm install react-toastify@latest`
-Smoke-test: trigger a success toast (log in correctly) and a failure toast (log in with wrong password). Both must appear in their previous positions.
-
-- [ ] **Step 4: Bump react-infinite-scroll-component**
-
-Run: `npm install react-infinite-scroll-component@latest`
-Smoke-test: open `/pacientes`, scroll to the bottom of the list, confirm a second batch loads. The hook `useInfinitePacientes` at `src/app/pacientes/useInfinitePacientes.ts` is the integration point; verify no console errors.
-
-- [ ] **Step 5: Bump the icon and headless-ui libraries**
-
-Run:
-```
-npm install @headlessui/react@latest @heroicons/react@latest react-icons@latest
-```
-Smoke-test: dialogs still open and animate (headlessui), the microscope icon in the page header still renders (react-icons), and any heroicons usage still renders.
-
-- [ ] **Step 6: Bump the Supabase CLI (dev tool)**
-
-Run: `npm install --save-dev supabase@latest`
-This is a dev-only tool for local Supabase development. No runtime smoke-test needed; verify only that `npx supabase --version` runs.
-
-- [ ] **Step 7: Bump postcss and TypeScript**
-
-Run:
-```
-npm install --save-dev postcss@latest typescript@5.9.3
-```
-Pin `typescript` to exactly `5.9.3` (the latest 5.x release) — TypeScript 6 is intentionally held back.
-
-Build: `npm run build && npx tsc --noEmit`
-Expected: both succeed.
-
-- [ ] **Step 8: Bump use-debounce**
-
-Run: `npm install use-debounce@latest`
-Smoke-test: search the patient list — the debounce on the search input must still delay queries.
-
-- [ ] **Step 9: Bump @react-pdf-renderer-already done in Task 6**
-
-(skip — already at v4.)
-
-- [ ] **Step 10: Bump react-hook-form**
-
-Run: `npm install react-hook-form@latest`
-Smoke-test: open the "Nuevo Paciente" or "Crear Visita" dialog, fill out a field, submit. Form should validate and submit as before.
-
-- [ ] **Step 11: Build and full smoke-test**
-
-Run: `npm run build && npm run dev`
-Walk through the entire critical path from Task 0 once.
-
-- [ ] **Step 12: Commit**
-
-```
-git add -A
-git commit -m "feat: long-tail dependency bumps
-
-Bumps Supabase SDK, zustand 5, react-toastify 11,
-react-infinite-scroll-component 7, headless-ui, heroicons, react-icons,
-supabase CLI 2, postcss, TypeScript to 5.9.3 (holding TS 6),
-use-debounce, react-hook-form.
-
-Co-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>"
-```
-
-If any single bump in Steps 1–10 broke something requiring investigation, abandon this consolidated commit and split into two commits: one for the broken package (after fixing), one for the rest.
-
----
-
-## Task 8: Final verification and PR
-
-**Files:** none modified beyond what previous tasks touched. This task validates the cumulative result.
-
-- [ ] **Step 1: Confirm `npm audit` is clean**
+- [ ] **Step 1: Final `npm audit`**
 
 Run: `npm audit`
 Expected:
-- Zero HIGH severity findings.
-- Zero MODERATE severity findings.
-- Any remaining LOW findings (rare) — document in the PR description, do not block.
+- Zero HIGH.
+- Zero MODERATE.
+- Any LOW findings — list in PR description.
 
-If HIGH or MODERATE remain, do not open the PR. Investigate by running `npm audit` (without `--json`) and reading the human-readable report. Either bump the offending package further or add a justified exception to the PR description.
-
-- [ ] **Step 2: Confirm build, lint, and typecheck all succeed**
+- [ ] **Step 2: Final build + lint**
 
 Run:
 ```
 npm run build
 npm run lint
-npx tsc --noEmit
 ```
-Expected: all three exit 0. Pre-existing lint warnings are acceptable; new errors are not.
+Expected: both exit 0. Pre-existing lint warnings acceptable, new errors not.
 
-- [ ] **Step 3: Full critical-path smoke test**
+- [ ] **Step 3: Push the branch**
 
-Run `npm run dev`. Walk through the entire Task 0 critical path one final time. Generate all three PDF types one more time and compare to the baselines.
+Run: `git push -u origin feature/deps-upgrade`
+Expected: push succeeds.
 
-- [ ] **Step 4: Push the branch**
+- [ ] **Step 4: Open the PR against `development`**
 
-```
-git push -u origin feature/deps-upgrade
-```
-
-- [ ] **Step 5: Open the PR against `development`**
-
-Use the GitHub CLI:
+Run:
 ```
 gh pr create --base development --title "feat: upgrade all dependencies to current stable versions" --body "$(cat <<'EOF'
 ## Summary
@@ -677,20 +626,29 @@ gh pr create --base development --title "feat: upgrade all dependencies to curre
 Brings every dependency in the project up to a current stable version,
 clearing all HIGH and MODERATE npm-audit findings on the previous tree.
 
+### Strategy
+
+Single-install approach: package.json was bulk-edited to all-target
+versions in one commit; the lockfile and node_modules were then
+regenerated in one fresh install. node_modules never existed on disk
+in a vulnerable state at any point on this branch.
+
 ### Major bumps
 
-- Next.js 14.2.22 → 16.x (codemod for async params/searchParams)
-- React 18 → 19
-- Tailwind CSS 3 → 4 (CSS-first config, PostCSS plugin renamed)
-- ESLint 8 → 10 (flat config; eslint-config-next 16)
-- @react-pdf/renderer 3 → 4 (visually validated against pre-upgrade baselines)
-- date-fns 3 → 4
-- zustand 4 → 5, react-toastify 10 → 11, react-infinite-scroll-component 6 → 7
+- Next.js 14.2.22 -> 16.x (async params/searchParams enforced)
+- React 18 -> 19
+- Tailwind CSS 3 -> 4 (CSS-first config, PostCSS plugin renamed)
+- ESLint 8 -> 10 (flat config; eslint-config-next 16)
+- @react-pdf/renderer 3 -> 4
+- date-fns 3 -> 4
+- zustand 4 -> 5, react-toastify 10 -> 11, react-infinite-scroll-component 6 -> 7
+- @supabase/supabase-js 2.43 -> 2.106
+- supabase CLI 1 -> 2 (dev only)
 
 ### Held intentionally
 
-- TypeScript stays on the 5.x line (5.8.3 → 5.9.3). TypeScript 6 is too
-  new to absorb here; revisit separately.
+- TypeScript stays on the 5.x line (5.8.3 -> 5.9.3 pinned ~5.9). TS 6
+  is too new; revisit separately.
 
 ### Dropped (unused in src/)
 
@@ -703,53 +661,54 @@ clearing all HIGH and MODERATE npm-audit findings on the previous tree.
 This project has no automated test suite. Verification is manual:
 
 - [ ] Vercel preview build succeeds
-- [ ] Login and toast work
+- [ ] Login and toasts work
 - [ ] Patient list renders and infinite-scrolls
 - [ ] Search debounces correctly
-- [ ] Patient detail page renders (this is the `[id]` route affected by
-      Next 16 async params)
+- [ ] Patient detail page renders (the `[id]` route affected by Next 16
+      async params)
 - [ ] "Crear visita" dialog opens and submits
-- [ ] All three PDF report types (Pap, Cepillado, Biopsia) generate and
-      match the pre-upgrade baseline visually
+- [ ] All three PDF report types (Pap, Cepillado, Biopsia) generate
 
 ## Out of scope
 
-- Package manager switch (npm → pnpm) — separate sub-project.
-- Doctor's signature on PDFs — separate sub-project, will sit on top of
-  the @react-pdf/renderer v4 baseline this PR establishes.
+- Package manager switch (npm -> pnpm) -- next sub-project.
+- Doctor's signature on PDFs -- separate sub-project.
 
 Spec: docs/superpowers/specs/2026-05-28-deps-upgrade-design.md
+Plan: docs/superpowers/plans/2026-05-28-deps-upgrade.md
 EOF
 )"
 ```
 
-- [ ] **Step 6: Watch the Vercel preview build**
+Expected: PR created, gh prints the URL.
 
-The PR triggers a Vercel preview deployment. Wait for it to finish (5–10 minutes typically). Click through to the preview URL and re-run the critical path against the deployed preview, not just local. This catches build-vs-runtime divergences (e.g., something that works in `next dev` but not in `next build`).
+- [ ] **Step 5: Watch the Vercel preview build**
 
-- [ ] **Step 7: Done**
+The PR triggers a Vercel preview deployment. Wait for it to finish. Click the preview URL, log in there, walk through the critical path against the deployed preview (not just local). This catches build-vs-runtime divergences.
 
-Mark the dep-upgrade sub-project complete. Move on to the pnpm migration sub-project (separate spec, separate plan, separate `feature/pnpm-migration` branch off `development`).
+- [ ] **Step 6: Done**
+
+Mark the dep-upgrade sub-project complete. The next sub-project is the pnpm migration — a fresh `feature/pnpm-migration` branch off `development`, with its own design spec.
 
 ---
 
-## Risks and rollback strategy
+## Risks and rollback
 
-Each task is one commit. If any task's verification step fails irrecoverably:
+Tasks 1+2 together form an atomic-feeling block (bulk-bump + install). If `npm install` in Task 2 fails irrecoverably:
 
-1. **Soft rollback** (preferred): `git reset --hard HEAD~1` to undo only the failed task's commit, then investigate without losing the previous task's progress.
-2. **Hard rollback**: `git checkout development && git branch -D feature/deps-upgrade` and start over (only if multiple tasks compound a problem).
+1. **Soft rollback:** `git reset --hard HEAD~1` to undo the Task 1 commit, then re-attempt with adjustments.
+2. **Identify the conflict:** read the npm error carefully. `ERESOLVE` errors usually name the two packages that disagree. Adjust the version in `package.json` and re-attempt.
 
-Do NOT `git reset --hard` further back than one commit without explicit user confirmation.
+Tasks 3-5 each touch only source code, so any failure there is rolled back with `git reset --hard HEAD~1` and re-attempted.
+
+Do NOT `git reset --hard` more than one commit without user confirmation.
 
 ## Out of scope (reaffirmed)
 
-This plan does not address, and the PR resulting from it must not include:
-- Switching the package manager.
-- Adding the doctor's signature.
+This plan does not address:
+- Switching the package manager (next sub-project).
+- The doctor's signature feature.
 - Refactoring auth, the `visitas`-as-JSON-array schema, or any UI structure.
 - Fixing the typo'd `zuztand/` directory name.
 - Removing the `typescript.ignoreBuildErrors: true` escape hatch in `next.config.mjs`.
 - Adding a test suite.
-
-Each of those is its own future decision.
