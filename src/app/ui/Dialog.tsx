@@ -55,7 +55,7 @@ export default function Dialog({
                   width ? width : "md:w-[90%]"
                 } flex-col`}
               >
-                <div className="bg-surface flex-1 max-h-[100vh] md:max-h-[100vh] px-4 pt-5 sm:p-6 sm:pb-4">
+                <div className="bg-surface flex-1 max-h-[90vh] overflow-y-auto px-4 pt-5 sm:p-6 sm:pb-4">
                   <div className="mt-3 text-center w-full">
                     <DialogTitle
                       as="h3"
