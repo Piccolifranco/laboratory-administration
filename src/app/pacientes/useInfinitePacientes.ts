@@ -16,7 +16,14 @@ export function useInfinitePacientes(searchTerm?: string) {
     setError(null);
     let from = pageIndex * PAGE_SIZE;
     let to = from + PAGE_SIZE - 1;
-    let query = supabase.from("pacientes").select();
+    let query = supabase
+      .from("pacientes")
+      .select()
+      // Newest patients first. Order the full set server-side BEFORE paginating
+      // so .range() walks a stable, globally-ordered list. The id tiebreaker
+      // keeps pagination stable when two rows share a createdAt timestamp.
+      .order("createdAt", { ascending: false })
+      .order("id", { ascending: false });
     if (searchTerm) {
       query = query.textSearch("lastName", searchTerm);
     }
