@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { Bars3Icon } from "@heroicons/react/24/outline";
 import { FaMicroscope } from "react-icons/fa";
 import clsx from "clsx";
@@ -9,12 +8,7 @@ import { Sidebar } from "./Sidebar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
-  const pathname = usePathname();
-
-  // Close the drawer whenever the route changes.
-  useEffect(() => {
-    setOpen(false);
-  }, [pathname]);
+  const close = () => setOpen(false);
 
   return (
     <div className="md:flex">
@@ -31,11 +25,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <span className="font-semibold">Anat. Patológica</span>
       </div>
 
-      {/* Backdrop (mobile only, when open) */}
+      {/* Backdrop (mobile only, when open). Covers main content, so any
+          navigation while open goes through a nav click or this backdrop —
+          both of which close the drawer; no route-change effect needed. */}
       {open && (
         <div
           className="fixed inset-0 z-30 bg-black/50 md:hidden"
-          onClick={() => setOpen(false)}
+          onClick={close}
           aria-hidden="true"
         />
       )}
@@ -47,7 +43,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <Sidebar onNavigate={() => setOpen(false)} />
+        <Sidebar onNavigate={close} />
       </div>
 
       <main className="min-h-screen flex-1">{children}</main>
