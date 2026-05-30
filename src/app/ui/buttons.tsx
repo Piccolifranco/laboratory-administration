@@ -15,7 +15,7 @@ export function CreatePaciente() {
   return (
     <Link
       href="/pacientes?createPaciente=true"
-      className="flex h-10 items-center rounded-lg bg-amber-600 px-4 text-md font-medium text-white transition-colors hover:bg-amber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+      className="flex h-10 items-center rounded-lg bg-primary px-4 text-md font-medium text-fg-inverse transition-colors hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <span className="hidden md:block">Nuevo paciente</span>{" "}
       <PlusIcon className="h-5 md:ml-4" />
@@ -37,7 +37,7 @@ export function EditPaciente({
     <Link
       onClick={handleClick}
       href="/pacientes?editPaciente=true"
-      className="rounded-md border p-2 hover:bg-gray-100"
+      className="rounded-md border p-2 hover:bg-surface-sunken"
     >
       <PencilIcon className="w-5" />
     </Link>
@@ -59,7 +59,7 @@ export function EditVisita({
     <Link
       onClick={handleClick}
       href={`/paciente/${pacienteId}?createVisita=true`}
-      className="rounded-md border p-2 hover:bg-gray-100"
+      className="rounded-md border p-2 hover:bg-surface-sunken"
     >
       <PencilIcon className="w-5" />
     </Link>
@@ -85,7 +85,7 @@ export function DeletePaciente(props: ButtonProps) {
           </div>
         }
         dialogFooter={
-          <div className="flex py-8 bg-gray-100 gap-4 justify-center w-[100%]">
+          <div className="flex py-8 bg-surface-sunken gap-4 justify-center w-[100%]">
             <button
               onClick={closeModal}
               className="rounded-md flex border p-2 text-black bg-slate-200 hover:bg-slate-300  items-center gap-2"
@@ -95,7 +95,7 @@ export function DeletePaciente(props: ButtonProps) {
             </button>
             <button
               {...props}
-              className="rounded-md flex border p-2 text-white bg-red-500 hover:bg-red-700 items-center gap-2"
+              className="rounded-md flex border p-2 text-fg-inverse bg-danger hover:bg-danger-hover items-center gap-2"
             >
               Eliminar
               <TrashIcon className="w-5" />
@@ -107,7 +107,7 @@ export function DeletePaciente(props: ButtonProps) {
       <button
         {...props}
         onClick={openModal}
-        className="rounded-md border p-2 hover:bg-gray-100"
+        className="rounded-md border p-2 hover:bg-surface-sunken"
       >
         <TrashIcon className="w-5" />
       </button>
@@ -116,7 +116,7 @@ export function DeletePaciente(props: ButtonProps) {
 }
 export function DownloadPDF(props: ButtonProps) {
   return (
-    <Button {...props} className="rounded-md border p-2 hover:bg-gray-100">
+    <Button {...props} className="rounded-md border p-2 hover:bg-surface-sunken">
       <FaDownload className="w-5" />
     </Button>
   );
@@ -126,7 +126,7 @@ export function CreateVisita({ id }: { id: number }) {
   return (
     <Link
       href={`/paciente/${id}?createVisita=true`}
-      className="flex h-10 my-1 items-center justify-center rounded-lg bg-amber-600 px-4 text-lg font-medium text-white transition-colors hover:bg-amber-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+      className="flex h-10 my-1 items-center justify-center rounded-lg bg-primary px-4 text-lg font-medium text-fg-inverse transition-colors hover:bg-primary-hover focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
     >
       <span className="hidden md:block">Nueva Visita</span>{" "}
       <PlusIcon className="h-5 md:ml-4" />

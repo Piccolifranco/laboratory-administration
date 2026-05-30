@@ -74,9 +74,9 @@ const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
     <div className="flex flex-col">
       <div className="overflow-x-auto">
         <div className="py-2 align-middle inline-block min-w-full">
-          <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-100">
+          <div className="shadow overflow-hidden border-b border-border sm:rounded-lg">
+            <table className="min-w-full divide-y divide-border">
+              <thead className="bg-surface-sunken">
                 <tr>
                   {[
                     { key: "lastName", label: "Nombre y Apellido" },
@@ -89,7 +89,7 @@ const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
                     <th
                       key={key}
                       scope="col"
-                      className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider cursor-pointer"
+                      className="px-6 py-3 text-left text-sm font-medium text-fg-muted uppercase tracking-wider cursor-pointer"
                       onClick={() =>
                         handleSort(key as keyof Paciente | "ultimaVisita")
                       }
@@ -104,13 +104,13 @@ const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
                   ))}
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-sm font-medium text-fg-muted uppercase tracking-wider"
                   >
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-surface divide-y divide-border">
                 {sortedPacientes.length === 0 && loading ? (
                   <PatientTableSkeleton />
                 ) : (
@@ -121,25 +121,25 @@ const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
                     router.refresh();
                   };
                   return (
-                    <tr key={paciente.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-md font-medium text-gray-900">
+                    <tr key={paciente.id} className="hover:bg-surface-muted">
+                      <td className="px-6 py-4 whitespace-nowrap text-md font-medium text-fg">
                         <Link href={`/paciente/${paciente.id}`}>
                           {paciente?.lastName}, {paciente.firstName}
                         </Link>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-md text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-md text-fg-subtle">
                         {paciente?.age ?? "-"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-md text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-md text-fg-subtle">
                         {paciente?.dni ?? "-"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-md text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-md text-fg-subtle">
                         {paciente?.doctor ?? "-"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-md text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-md text-fg-subtle">
                         {paciente?.obraSocial ?? "-"}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-md text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-md text-fg-subtle">
                         {paciente?.visitas
                           ? `${format(
                               new Date(paciente.visitas[0].date),
@@ -147,7 +147,7 @@ const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
                             )}`
                           : ""}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-fg-subtle">
                         <div className="flex gap-3">
                           <EditPaciente
                             paciente={paciente}
