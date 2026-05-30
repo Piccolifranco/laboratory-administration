@@ -37,7 +37,7 @@ export default function Home() {
   };
 
   return (
-    <div className="h-[calc(100vh-88px)] bg-surface-sunken flex flex-col justify-center items-center">
+    <div className="min-h-screen bg-surface-sunken flex flex-col justify-center items-center px-4">
       <div className="w-full max-w-lg bg-surface shadow-lg rounded-lg p-8">
         <div className="w-[100%] justify-center flex">
           <Image
