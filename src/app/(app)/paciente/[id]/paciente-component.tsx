@@ -63,7 +63,7 @@ function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
       <div className="my-2">
         <CreateVisita id={paciente.id} />
       </div>
-      <div className="overflow-x-auto">
+      <div className="hidden overflow-x-auto md:block">
         <div className="py-2 align-middle inline-block min-w-full">
           <div className="shadow overflow-hidden border-b border-border sm:rounded-lg">
             <table className="min-w-full divide-y divide-border">
@@ -167,6 +167,59 @@ function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
           </div>
         </div>
       </div>
+
+      {/* Mobile: visita cards */}
+      <div className="space-y-3 md:hidden">
+        {reorderedVisitas?.map((visita) => (
+          <div
+            key={visita.id}
+            className="rounded-lg border border-border bg-surface p-4 shadow-sm"
+          >
+            <div className="text-md font-medium text-fg">
+              {visita[visita.type]?.title}
+            </div>
+            <dl className="mt-2 space-y-1 text-sm text-fg-subtle">
+              <div>
+                <dt className="inline font-medium">Doctor/a: </dt>
+                <dd className="inline">
+                  {paciente?.doctor ? paciente.doctor : visita.secondaryDoctor}
+                </dd>
+              </div>
+              <div>
+                <dt className="inline font-medium">Fecha: </dt>
+                <dd className="inline">
+                  {visita.date
+                    ? format(new Date(visita.date), "dd/MM/yyyy")
+                    : ""}
+                </dd>
+              </div>
+            </dl>
+            <div className="mt-3 flex items-center justify-between">
+              <InvoiceStatus amount={visita.amount} status={visita.status} />
+              <div className="flex gap-3">
+                <EditVisita
+                  pacienteId={paciente.id}
+                  visita={visita}
+                  onEditVisita={() => {
+                    setVisitaToEdit(visita);
+                  }}
+                />
+                <DownloadPDF
+                  onClick={async () => {
+                    const blob = await pdf(
+                      <DocumentoPDF visita={visita} paciente={paciente} />
+                    ).toBlob();
+                    const pdfURL = URL.createObjectURL(blob);
+                    window.open(pdfURL, "_blank");
+                    removeQueryParams();
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
       <Dialog
         dialogTitle="Nuevo informe"
         dialogBody={
