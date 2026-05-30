@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, { useEffect } from "react";
 import { Paciente } from "../../../../types/supabase";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -29,7 +29,7 @@ function EditPacienteDialogBody({ paciente }: EditPacienteDialogBodyProps) {
       // Puedes mostrar un mensaje de error en la interfaz de usuario
     } else {
       console.log("Paciente actualizado exitosamente:", updatedPaciente);
-      // Puedes mostrar un mensaje de Ã©xito en la interfaz de usuario
+      // Puedes mostrar un mensaje de éxito en la interfaz de usuario
     }
     router.refresh();
   };

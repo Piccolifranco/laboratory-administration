@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React from "react";
 import { Paciente } from "../../../../types/supabase";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -26,7 +26,7 @@ function NewPacienteDialogBody() {
     } else {
       console.log("Paciente agregado exitosamente:", pacienteAdded);
 
-      // Puedes mostrar un mensaje de Ã©xito en la interfaz de usuario
+      // Puedes mostrar un mensaje de éxito en la interfaz de usuario
     }
     router.refresh();
   };

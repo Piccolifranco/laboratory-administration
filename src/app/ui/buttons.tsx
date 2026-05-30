@@ -1,4 +1,4 @@
-﻿import {
+import {
   PencilIcon,
   PlusIcon,
   TrashIcon,
