@@ -11,7 +11,7 @@ import {
 } from "@/app/ui/buttons";
 import { NewVisitaDialogBody } from "@/app/ui/NewVisitaDialogBody/NewVisitaDialogBody";
 import InvoiceStatus from "@/app/ui/status";
-import { Paciente, Visitas } from "../../../../types/supabase";
+import { Paciente, Visitas } from "@/types/supabase";
 import { format, toDate } from "date-fns";
 import { CustomPopover } from "@/app/ui/Popover/Popover";
 import { pdf } from "@react-pdf/renderer";

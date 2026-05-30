@@ -1,14 +1,14 @@
 import { Pacientes } from "./pacientes-component";
 import Image from "next/image";
-import Search from "../ui/search";
-import { CreatePaciente } from "../ui/buttons";
-import Table from "../ui/Table";
+import Search from "@/app/ui/search";
+import { CreatePaciente } from "@/app/ui/buttons";
+import Table from "@/app/ui/Table";
 import { Suspense } from "react";
-import { InvoicesTableSkeleton } from "../ui/skeletons";
-import Dialog from "../ui/Dialog";
-import { NewPacienteDialogBody } from "../ui/NewPacienteDialog/NewPacienteDialogBody";
-import { Paciente } from "../../../types/supabase";
-import { supabase } from "../utils/supabaseClient";
+import { InvoicesTableSkeleton } from "@/app/ui/skeletons";
+import Dialog from "@/app/ui/Dialog";
+import { NewPacienteDialogBody } from "@/app/ui/NewPacienteDialog/NewPacienteDialogBody";
+import { Paciente } from "@/types/supabase";
+import { supabase } from "@/app/utils/supabaseClient";
 export default async function PacientesPage({
   searchParams,
 }: {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "../utils/supabaseClient";
-import { Paciente } from "../../../types/supabase";
+import { supabase } from "@/app/utils/supabaseClient";
+import { Paciente } from "@/types/supabase";
 
 const PAGE_SIZE = 20;
 
