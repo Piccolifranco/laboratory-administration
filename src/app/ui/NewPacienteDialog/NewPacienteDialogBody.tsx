@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React from "react";
 import { Paciente } from "../../../../types/supabase";
 import { SubmitHandler, useForm } from "react-hook-form";
@@ -26,7 +26,7 @@ function NewPacienteDialogBody() {
     } else {
       console.log("Paciente agregado exitosamente:", pacienteAdded);
 
-      // Puedes mostrar un mensaje de éxito en la interfaz de usuario
+      // Puedes mostrar un mensaje de Ã©xito en la interfaz de usuario
     }
     router.refresh();
   };
@@ -48,7 +48,7 @@ function NewPacienteDialogBody() {
             placeholder="Ingrese su nombre"
           />
           {errors.firstName && (
-            <span className="text-red-600">Nombre es requerido</span>
+            <span className="text-danger">Nombre es requerido</span>
           )}
         </div>
         <div className="space-y-2 flex flex-col w-full items-start">
@@ -65,7 +65,7 @@ function NewPacienteDialogBody() {
             placeholder="Ingrese su apellido"
           />
           {errors.lastName && (
-            <span className="text-red-600">Apellido es requerido</span>
+            <span className="text-danger">Apellido es requerido</span>
           )}
         </div>
         <div className="space-y-2 flex flex-col w-full items-start">
@@ -112,7 +112,7 @@ function NewPacienteDialogBody() {
             placeholder="Ingrese el nombre del doctor"
           />
           {errors.doctor && (
-            <span className="text-red-600">Doctor es requerido</span>
+            <span className="text-danger">Doctor es requerido</span>
           )}
         </div>
         <div className="space-y-2 flex flex-col w-full items-start">
@@ -129,12 +129,12 @@ function NewPacienteDialogBody() {
             placeholder="Ingrese su obra social"
           />
           {errors.obraSocial && (
-            <span className="text-red-600">Obra Social es requerida</span>
+            <span className="text-danger">Obra Social es requerida</span>
           )}
         </div>
         <button
           type="submit"
-          className="mt-4 px-4 py-2 bg-amber-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
+          className="mt-4 px-4 py-2 bg-primary text-fg-inverse rounded-md focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
         >
           Guardar
         </button>

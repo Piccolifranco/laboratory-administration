@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { Select } from "@headlessui/react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { Paciente, Visitas } from "../../../../types/supabase";
@@ -148,13 +148,13 @@ function NewVisitaDialogBody({
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               htmlFor="secondaryDoctor"
             >
-              Médico Secundario
+              MÃ©dico Secundario
             </label>
             <input
               {...register("secondaryDoctor")}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               id="secondaryDoctor"
-              placeholder="Ingrese el nombre del médico secundario"
+              placeholder="Ingrese el nombre del mÃ©dico secundario"
             />
           </div>
           <div className="space-y-2">
@@ -206,7 +206,7 @@ function NewVisitaDialogBody({
               htmlFor="diagnosis"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
-              Tipo de Diagnóstico
+              Tipo de DiagnÃ³stico
             </label>
             <Select
               {...register("type")}
@@ -221,13 +221,13 @@ function NewVisitaDialogBody({
               <option value="biopsiaDiagnosis">Biopsia</option>
 
               <option value="diverticuloMeckelDiagnosis">
-                Divertículo de Meckel
+                DivertÃ­culo de Meckel
               </option>
               <option value="polipoColoEndometrioDiagnosis">
-                Pólipo Colo-Endometrio
+                PÃ³lipo Colo-Endometrio
               </option>
               <option value="polipoEndometrialCopiaDiagnosis">
-                Pólipo Endometrial Copia
+                PÃ³lipo Endometrial Copia
               </option>
               <option value="quisteDeOvarioDiagnosis">Quiste de Ovario</option>
               <option value="quistePilonidalDiagnosis">Quiste Pilonidal</option>
@@ -238,7 +238,7 @@ function NewVisitaDialogBody({
                 Adenocarcinoma de Endometrio
               </option>
               <option value="condilomasMultiplesDiagnosis">
-                Condilomas Múltiples
+                Condilomas MÃºltiples
               </option>
 
               <option value="conoSilBajoGradoDiagnosis">
@@ -257,7 +257,7 @@ function NewVisitaDialogBody({
               </option>
               <option value="vulvaDiagnosis">Vulva</option>
               <option value="apendicitisGangrenosaDiagnosis">
-                Apéndice Gangrenosa
+                ApÃ©ndice Gangrenosa
               </option>
               <option value="basocelularDiagnosis">Basocelular</option>
               <option value="colecistitisAgudaDiagnosis">
@@ -271,7 +271,7 @@ function NewVisitaDialogBody({
               </option>
               <option value="cuelloVaginaDiagnosis">Cuello Vagina</option>
               <option value="estomagoPolipoRectoDiagnosis">
-                Estómago Pólipo Recto
+                EstÃ³mago PÃ³lipo Recto
               </option>
               <option value="gastritisDiagnosis">Gastritis</option>
               <option value="hemoroidesDiagnosis">Hemoroides</option>
@@ -279,7 +279,7 @@ function NewVisitaDialogBody({
                 HST Bilateral Miomas
               </option>
               <option value="hstTotalMasAnexosPolipoEndometrioDiagnosis">
-                Hst Total Más Anexos Pólipo Endometrio
+                Hst Total MÃ¡s Anexos PÃ³lipo Endometrio
               </option>
               <option value="infartoIntestinalDiagnosis">
                 Infarto Intestinal
@@ -289,16 +289,16 @@ function NewVisitaDialogBody({
               </option>
               <option value="placentaHTADiagnosis">Placenta HTA</option>
               <option value="polipoEndometrioDiagnosis">
-                Pólipo Endometrio
+                PÃ³lipo Endometrio
               </option>
               <option value="polipoEstomagoYEstomagoDiagnosis">
-                Pólipo Estómago y Estómago
+                PÃ³lipo EstÃ³mago y EstÃ³mago
               </option>
               <option value="quisteDeInclusionEpidDiagnosis">
-                Quiste de Inclusión Epidermica
+                Quiste de InclusiÃ³n Epidermica
               </option>
-              <option value="tejidoNecroticoDiagnosis">Tejido Necrótico</option>
-              <option value="ulceraGastricaDiagnosis">Úlcera Gástrica</option>
+              <option value="tejidoNecroticoDiagnosis">Tejido NecrÃ³tico</option>
+              <option value="ulceraGastricaDiagnosis">Ãšlcera GÃ¡strica</option>
               <option value="mamaFibroadenomaDiagnosis">
                 Mama Fibroadenoma
               </option>
@@ -307,9 +307,9 @@ function NewVisitaDialogBody({
               <option value="pielNevusDiagnosis">Piel Nevus</option>
               <option value="placentaDiagnosis">Placenta</option>
               <option value="placentaAcretaDiagnosis">Placenta Acreta</option>
-              <option value="polipoColonDiagnosis">Pólipo de Colon</option>
+              <option value="polipoColonDiagnosis">PÃ³lipo de Colon</option>
               <option value="polipoEndocervicalDiagnosis">
-                Pólipo Endocervical
+                PÃ³lipo Endocervical
               </option>
               <option value="prolapsoDiagnosis">Prolapso</option>
               <option value="restosPlacentariosDiagnosis">
@@ -319,7 +319,7 @@ function NewVisitaDialogBody({
               <option value="verrugaVulgarDeVulvaDiagnosis">
                 Verruga Vulgar de Vulva
               </option>
-              <option value="vesiculaDiagnosis">Vesícula</option>
+              <option value="vesiculaDiagnosis">VesÃ­cula</option>
               <option value="endocervixYEndometrioDiagnosis">
                 Endocervix y Endometrio
               </option>
@@ -328,22 +328,22 @@ function NewVisitaDialogBody({
                 Endometrio Disgregado
               </option>
               <option value="estomagoYDuodenoDiagnosis">
-                Estómago y Duodeno
+                EstÃ³mago y Duodeno
               </option>
-              <option value="extraccionDiuDiagnosis">Extracción DIU</option>
+              <option value="extraccionDiuDiagnosis">ExtracciÃ³n DIU</option>
               <option value="fibromaBlandoDiagnosis">Fibroma Blando</option>
               <option value="granulomaDeVaginaDiagnosis">
                 Granuloma de Vagina
               </option>
               <option value="histerectomiaSimpleDiagnosis">
-                Histerectomía Simple
+                HisterectomÃ­a Simple
               </option>
               <option value="leiomiomaHipercelularDiagnosis">
                 Leiomioma Hipercelular
               </option>
-              <option value="liquidoPleuralDiagnosis">Líquido Pleural</option>
+              <option value="liquidoPleuralDiagnosis">LÃ­quido Pleural</option>
               <option value="liquidoPeritonealDiagnosis">
-                Líquido Peritoneal
+                LÃ­quido Peritoneal
               </option>
               <option value="tiroidesDiagnosis">Tiroides</option>
               <option value="marshTipo3CeliaquiaDiagnosis">
@@ -371,13 +371,13 @@ function NewVisitaDialogBody({
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   htmlFor="adecuacionEvaluacion"
                 >
-                  Evaluación:
+                  EvaluaciÃ³n:
                 </label>
                 <input
                   {...register(`${type}.evaluation`)}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   id="adecuacionEvaluacion"
-                  placeholder="Ingrese la evaluación de adecuación del espécimen"
+                  placeholder="Ingrese la evaluaciÃ³n de adecuaciÃ³n del espÃ©cimen"
                 />
               </div>
               <div className="space-y-2">
@@ -391,7 +391,7 @@ function NewVisitaDialogBody({
                   {...register(`${type}.aspect`)}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   id="adecuacionAspecto"
-                  placeholder="Ingrese el aspecto de adecuación del espécimen"
+                  placeholder="Ingrese el aspecto de adecuaciÃ³n del espÃ©cimen"
                 />
               </div>
               <div className="space-y-2">
@@ -405,7 +405,7 @@ function NewVisitaDialogBody({
                   {...register(`${type}.fondo`)}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   id="adecuacionFondo"
-                  placeholder="Ingrese el fondo de adecuación del espécimen"
+                  placeholder="Ingrese el fondo de adecuaciÃ³n del espÃ©cimen"
                 />
               </div>
               <div className="space-y-2">
@@ -427,13 +427,13 @@ function NewVisitaDialogBody({
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   htmlFor="papCelPav"
                 >
-                  Evaluacion de células Pavimentosas:
+                  Evaluacion de cÃ©lulas Pavimentosas:
                 </label>
                 <textarea
                   {...register(`${type}.celPav`)}
                   className="flex h-40 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   id="papCelPav"
-                  placeholder="Ingrese las células pavimentosas"
+                  placeholder="Ingrese las cÃ©lulas pavimentosas"
                 ></textarea>
               </div>
               <div className="space-y-2">
@@ -447,7 +447,7 @@ function NewVisitaDialogBody({
                   {...register(`${type}.evHorm`)}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   id="papEvHorm"
-                  placeholder="Ingrese la evolución hormonal"
+                  placeholder="Ingrese la evoluciÃ³n hormonal"
                 />
               </div>
             </div>
@@ -467,7 +467,7 @@ function NewVisitaDialogBody({
                   {...register(`${type}.celCil`)}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   id="papCelCil"
-                  placeholder="Ingrese las células ciliadas"
+                  placeholder="Ingrese las cÃ©lulas ciliadas"
                 />
               </div>
               <div className="space-y-2">
@@ -481,7 +481,7 @@ function NewVisitaDialogBody({
                   {...register(`${type}.title`)}
                   className="flex h-40 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   id="papTitle"
-                  placeholder="Ingrese el título del diagnóstico de Pap"
+                  placeholder="Ingrese el tÃ­tulo del diagnÃ³stico de Pap"
                 ></textarea>
               </div>
               <div className="space-y-2">
@@ -495,7 +495,7 @@ function NewVisitaDialogBody({
                   {...register(`${type}.notes`)}
                   className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   id="biopsiaNotas"
-                  placeholder="Ingrese las notas del diagnóstico de biopsia"
+                  placeholder="Ingrese las notas del diagnÃ³stico de biopsia"
                 ></textarea>
               </div>
               <div className="space-y-2">
@@ -509,7 +509,7 @@ function NewVisitaDialogBody({
                   {...register(`${type}.class`)}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   id="papClass"
-                  placeholder="Ingrese la clase del diagnóstico de Pap"
+                  placeholder="Ingrese la clase del diagnÃ³stico de Pap"
                 />
               </div>
               <div className="space-y-2 flex-col flex">
@@ -556,13 +556,13 @@ function NewVisitaDialogBody({
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 htmlFor="evaluation"
               >
-                Evaluación de Cepillado:
+                EvaluaciÃ³n de Cepillado:
               </label>
               <input
                 {...register("cepilladoDiagnosis.evaluation")}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 id="cepilladoEval"
-                placeholder="Ingrese la evaluación de cepillado"
+                placeholder="Ingrese la evaluaciÃ³n de cepillado"
               />
             </div>
             <div className="space-y-2">
@@ -639,7 +639,7 @@ function NewVisitaDialogBody({
                 {...register(`${type}.notes`)}
                 className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 id="biopsiaNotas"
-                placeholder="Ingrese las notas del diagnóstico de biopsia"
+                placeholder="Ingrese las notas del diagnÃ³stico de biopsia"
               ></textarea>
             </div>
             <div className="space-y-2 flex-col flex">
@@ -689,13 +689,13 @@ function NewVisitaDialogBody({
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   htmlFor="biopsiaMacro"
                 >
-                  Evaluacion macroscópica:
+                  Evaluacion macroscÃ³pica:
                 </label>
                 <textarea
                   {...register(`${type}.macro`)}
                   className="flex h-52 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   id="biopsiaMacro"
-                  placeholder="Ingrese el macroscópico del diagnóstico de biopsia"
+                  placeholder="Ingrese el macroscÃ³pico del diagnÃ³stico de biopsia"
                 ></textarea>
               </div>
               <div className="space-y-2">
@@ -703,13 +703,13 @@ function NewVisitaDialogBody({
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   htmlFor="biopsiaMicro"
                 >
-                  Evaluacion Microscópica:
+                  Evaluacion MicroscÃ³pica:
                 </label>
                 <textarea
                   {...register(`${type}.micro`)}
                   className="flex h-52 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   id="biopsiaMicro"
-                  placeholder="Ingrese el microscópico del diagnóstico de biopsia"
+                  placeholder="Ingrese el microscÃ³pico del diagnÃ³stico de biopsia"
                 ></textarea>
               </div>
             </div>
@@ -731,7 +731,7 @@ function NewVisitaDialogBody({
                   {...register(`${type}.title`)}
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   id="biopsiaTitle"
-                  placeholder="Ingrese el título del diagnóstico de biopsia"
+                  placeholder="Ingrese el tÃ­tulo del diagnÃ³stico de biopsia"
                 />
               </div>
               <div className="space-y-2">
@@ -739,13 +739,13 @@ function NewVisitaDialogBody({
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   htmlFor="biopsiaDescription"
                 >
-                  Descripción del Diagnóstico:
+                  DescripciÃ³n del DiagnÃ³stico:
                 </label>
                 <textarea
                   {...register(`${type}.description`)}
                   className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   id="biopsiaDescription"
-                  placeholder="Ingrese la descripción del diagnóstico de biopsia"
+                  placeholder="Ingrese la descripciÃ³n del diagnÃ³stico de biopsia"
                 ></textarea>
               </div>
 
@@ -760,7 +760,7 @@ function NewVisitaDialogBody({
                   {...register(`${type}.notes`)}
                   className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                   id="biopsiaNotas"
-                  placeholder="Ingrese las notas del diagnóstico de biopsia"
+                  placeholder="Ingrese las notas del diagnÃ³stico de biopsia"
                 ></textarea>
               </div>
               <div className="space-y-2 flex-col flex">
@@ -800,17 +800,17 @@ function NewVisitaDialogBody({
           )}
       </div>
       {/* Sticky footer for action buttons */}
-      <div className="sticky bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-md flex gap-4 py-4 px-6 z-10 justify-center">
+      <div className="sticky bottom-0 left-0 w-full bg-surface border-t border-border shadow-md flex gap-4 py-4 px-6 z-10 justify-center">
         <button
           type="button"
-          className="px-4 py-2 bg-amber-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2"
+          className="px-4 py-2 bg-primary text-fg-inverse rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           onClick={handleSubmit(onSaveOnly)}
         >
           Guardar
         </button>
         <button
           type="submit"
-          className="px-4 py-2 bg-amber-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2"
+          className="px-4 py-2 bg-primary text-fg-inverse rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
         >
           Guardar y descargar
         </button>
