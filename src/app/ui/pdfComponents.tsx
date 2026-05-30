@@ -18,6 +18,7 @@ import {
   BiopsiaVisita,
 } from "../../../types/supabase"; // Importa tus tipos definidos
 import { format } from "date-fns";
+import { pdfColors } from "./pdfColors";
 
 // Define estilos para el PDF
 const styles = StyleSheet.create({
@@ -48,7 +49,7 @@ const styles = StyleSheet.create({
   },
   headerBox: {
     borderWidth: 1,
-    borderColor: "#000",
+    borderColor: pdfColors.border,
     padding: 20,
     marginBottom: 10,
   },
