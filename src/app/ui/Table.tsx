@@ -72,7 +72,7 @@ const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
 
   return (
     <div className="flex flex-col">
-      <div className="overflow-x-auto">
+      <div className="hidden overflow-x-auto md:block">
         <div className="py-2 align-middle inline-block min-w-full">
           <div className="shadow overflow-hidden border-b border-border sm:rounded-lg">
             <table className="min-w-full divide-y divide-border">
@@ -166,6 +166,81 @@ const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
             </table>
           </div>
         </div>
+      </div>
+
+      {/* Mobile: cards */}
+      <div className="space-y-3 md:hidden">
+        {sortedPacientes.length === 0 && loading ? (
+          <>
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="h-28 animate-pulse rounded-lg bg-surface-sunken"
+              />
+            ))}
+          </>
+        ) : (
+          sortedPacientes.map((paciente) => {
+            const handleDeletePacienteCard = async () => {
+              await deletePaciente(paciente.id);
+              router.refresh();
+            };
+            return (
+              <div
+                key={paciente.id}
+                className="rounded-lg border border-border bg-surface p-4 shadow-sm"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <Link
+                    href={`/paciente/${paciente.id}`}
+                    className="text-md font-medium text-fg"
+                  >
+                    {paciente?.lastName}, {paciente.firstName}
+                  </Link>
+                  <div className="flex gap-2">
+                    <EditPaciente
+                      paciente={paciente}
+                      onEditPaciente={onEditPaciente}
+                    />
+                    <DeletePaciente onClick={handleDeletePacienteCard} />
+                  </div>
+                </div>
+                <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-fg-subtle">
+                  <div>
+                    <dt className="inline font-medium">Edad: </dt>
+                    <dd className="inline">{paciente?.age ?? "-"}</dd>
+                  </div>
+                  <div>
+                    <dt className="inline font-medium">DNI: </dt>
+                    <dd className="inline">{paciente?.dni ?? "-"}</dd>
+                  </div>
+                  <div>
+                    <dt className="inline font-medium">Doctor/a: </dt>
+                    <dd className="inline">{paciente?.doctor ?? "-"}</dd>
+                  </div>
+                  <div>
+                    <dt className="inline font-medium">OS: </dt>
+                    <dd className="inline">{paciente?.obraSocial ?? "-"}</dd>
+                  </div>
+                  <div className="col-span-2">
+                    <dt className="inline font-medium">Última visita: </dt>
+                    <dd className="inline">
+                      {paciente?.visitas
+                        ? format(
+                            new Date(paciente.visitas[0].date),
+                            "dd/MM/yyyy"
+                          )
+                        : "-"}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            );
+          })
+        )}
+        {loading && sortedPacientes.length > 0 && (
+          <div className="h-28 animate-pulse rounded-lg bg-surface-sunken" />
+        )}
       </div>
     </div>
   );
