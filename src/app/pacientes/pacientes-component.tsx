@@ -43,12 +43,12 @@ const Pacientes = ({
           />
           <CreatePaciente />
         </div>
-        {error && <div className="text-red-500">{error}</div>}
+        {error && <div className="text-danger">{error}</div>}
         <InfiniteScroll
           dataLength={pacientes.length}
           next={fetchNext}
           hasMore={hasMore}
-          endMessage={<p className="text-center py-4 text-gray-500">No hay más pacientes.</p>}
+          endMessage={<p className="text-center py-4 text-fg-subtle">No hay más pacientes.</p>}
         >
           <Table pacientes={pacientes} onEditPaciente={handleEditPaciente} loading={loading} />
         </InfiniteScroll>
