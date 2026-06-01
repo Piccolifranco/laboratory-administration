@@ -13,7 +13,7 @@ export default function PatientTableSkeleton() {
               {/* Nucleus */}
               <div className="absolute top-1/2 left-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-purple-400 via-blue-400 to-green-300 opacity-80"></div>
               {/* Shine */}
-              <div className="absolute left-1 top-1 h-2 w-2 rounded-full bg-white opacity-30"></div>
+              <div className="absolute left-1 top-1 h-2 w-2 rounded-full bg-surface opacity-30"></div>
             </div>
           </div>
         </td>

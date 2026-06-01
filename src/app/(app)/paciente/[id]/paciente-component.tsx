@@ -11,7 +11,7 @@ import {
 } from "@/app/ui/buttons";
 import { NewVisitaDialogBody } from "@/app/ui/NewVisitaDialogBody/NewVisitaDialogBody";
 import InvoiceStatus from "@/app/ui/status";
-import { Paciente, Visitas } from "../../../../types/supabase";
+import { Paciente, Visitas } from "@/types/supabase";
 import { format, toDate } from "date-fns";
 import { CustomPopover } from "@/app/ui/Popover/Popover";
 import { pdf } from "@react-pdf/renderer";
@@ -65,77 +65,77 @@ function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
       </div>
       <div className="overflow-x-auto">
         <div className="py-2 align-middle inline-block min-w-full">
-          <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-100">
+          <div className="shadow overflow-hidden border-b border-border sm:rounded-lg">
+            <table className="min-w-full divide-y divide-border">
+              <thead className="bg-surface-sunken">
                 <tr>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-sm font-medium text-fg-muted uppercase tracking-wider"
                   >
                     Nombre y Apellido
                   </th>
 
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-sm font-medium text-fg-muted uppercase tracking-wider"
                   >
                     Doctor/a
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-sm font-medium text-fg-muted uppercase tracking-wider"
                   >
                     Diagnostico
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-sm font-medium text-fg-muted uppercase tracking-wider"
                   >
                     Fecha
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-sm font-medium text-fg-muted uppercase tracking-wider"
                   >
                     Estado
                   </th>
                   <th
                     scope="col"
-                    className="px-6 py-3 text-left text-sm font-medium text-gray-700 uppercase tracking-wider"
+                    className="px-6 py-3 text-left text-sm font-medium text-fg-muted uppercase tracking-wider"
                   >
                     Acciones
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-surface divide-y divide-border">
                 {reorderedVisitas?.map((visita) => {
                   return (
-                    <tr key={paciente?.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <tr key={paciente?.id} className="hover:bg-surface-muted">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-fg">
                         {paciente?.firstName}, {paciente?.lastName}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-fg-subtle">
                         {paciente?.doctor
                           ? paciente.doctor
                           : visita.secondaryDoctor}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-fg-subtle">
                         {visita[visita.type]?.title}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-fg-subtle">
                         {paciente?.visitas && visita.date
                           ? `${format(new Date(visita.date), "dd/MM/yyyy")}`
                           : ""}
                       </td>
 
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-fg-subtle">
                         <InvoiceStatus
                           amount={visita.amount}
                           status={visita.status}
                         />
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-fg-subtle">
                         <div className="flex gap-3">
                           <EditVisita
                             pacienteId={paciente.id}

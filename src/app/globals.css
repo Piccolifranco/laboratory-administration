@@ -1,5 +1,55 @@
 @import "tailwindcss";
 
+@theme {
+  /* brand */
+  --color-primary: var(--color-amber-600);
+  --color-primary-hover: var(--color-amber-500);
+
+  /* accent / focus */
+  --color-accent: var(--color-blue-600);
+  --color-accent-ring: var(--color-blue-500);
+
+  /* status */
+  --color-danger: var(--color-red-600);
+  --color-danger-hover: var(--color-red-700);
+  --color-success: var(--color-green-500);
+
+  /* surfaces */
+  --color-surface: var(--color-white);
+  --color-surface-muted: var(--color-gray-50);
+  --color-surface-sunken: var(--color-gray-100);
+  --color-surface-inverse: var(--color-gray-900);
+  --color-surface-inverse-hover: var(--color-gray-800);
+
+  /* foreground (text) */
+  --color-fg: var(--color-gray-900);
+  --color-fg-muted: var(--color-gray-700);
+  --color-fg-subtle: var(--color-gray-500);
+  --color-fg-inverse: var(--color-white);
+
+  /* borders + overlay */
+  --color-border: var(--color-gray-200);
+  --color-border-strong: var(--color-gray-300);
+  --color-overlay: var(--color-gray-500);
+
+  /* sidebar (provisional — for the upcoming sidebar feature) */
+  --color-sidebar: var(--color-gray-900);
+  --color-sidebar-text: var(--color-gray-300);
+  --color-sidebar-text-active: var(--color-white);
+  --color-sidebar-item-hover: var(--color-gray-800);
+  --color-sidebar-item-active: var(--color-amber-600);
+
+  /* categorical chart palette (provisional — for upcoming statistics) */
+  --color-chart-1: var(--color-amber-600);
+  --color-chart-2: var(--color-blue-600);
+  --color-chart-3: var(--color-teal-500);
+  --color-chart-4: var(--color-rose-500);
+  --color-chart-5: var(--color-violet-500);
+  --color-chart-6: var(--color-green-600);
+  --color-chart-7: var(--color-orange-500);
+  --color-chart-8: var(--color-cyan-600);
+}
+
 .overflow-hidden {
   overflow: hidden !important;
 }

@@ -800,17 +800,17 @@ function NewVisitaDialogBody({
           )}
       </div>
       {/* Sticky footer for action buttons */}
-      <div className="sticky bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-md flex gap-4 py-4 px-6 z-10 justify-center">
+      <div className="sticky bottom-0 left-0 w-full bg-surface border-t border-border shadow-md flex gap-4 py-4 px-6 z-10 justify-center">
         <button
           type="button"
-          className="px-4 py-2 bg-amber-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2"
+          className="px-4 py-2 bg-primary text-fg-inverse rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
           onClick={handleSubmit(onSaveOnly)}
         >
           Guardar
         </button>
         <button
           type="submit"
-          className="px-4 py-2 bg-amber-600 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-amber-600 focus:ring-offset-2"
+          className="px-4 py-2 bg-primary text-fg-inverse rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
         >
           Guardar y descargar
         </button>

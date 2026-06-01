@@ -1,13 +1,13 @@
 "use client";
 import React, { useState } from "react";
-import { Paciente } from "../../../types/supabase";
-import Dialog from "../ui/Dialog";
-import { NewPacienteDialogBody } from "../ui/NewPacienteDialog/NewPacienteDialogBody";
-import { InvoicesTableSkeleton } from "../ui/skeletons";
-import { CreatePaciente } from "../ui/buttons";
-import Table from "../ui/Table";
-import Search from "../ui/search";
-import { EditPacienteDialogBody } from "../ui/EditPacienteDialog/EditPacienteDialogBody";
+import { Paciente } from "@/types/supabase";
+import Dialog from "@/app/ui/Dialog";
+import { NewPacienteDialogBody } from "@/app/ui/NewPacienteDialog/NewPacienteDialogBody";
+import { InvoicesTableSkeleton } from "@/app/ui/skeletons";
+import { CreatePaciente } from "@/app/ui/buttons";
+import Table from "@/app/ui/Table";
+import Search from "@/app/ui/search";
+import { EditPacienteDialogBody } from "@/app/ui/EditPacienteDialog/EditPacienteDialogBody";
 import InfiniteScroll from "react-infinite-scroll-component";
 import { useInfinitePacientes } from "./useInfinitePacientes";
 import { useDebounce } from "use-debounce";
@@ -43,12 +43,12 @@ const Pacientes = ({
           />
           <CreatePaciente />
         </div>
-        {error && <div className="text-red-500">{error}</div>}
+        {error && <div className="text-danger">{error}</div>}
         <InfiniteScroll
           dataLength={pacientes.length}
           next={fetchNext}
           hasMore={hasMore}
-          endMessage={<p className="text-center py-4 text-gray-500">No hay más pacientes.</p>}
+          endMessage={<p className="text-center py-4 text-fg-subtle">No hay más pacientes.</p>}
         >
           <Table pacientes={pacientes} onEditPaciente={handleEditPaciente} loading={loading} />
         </InfiniteScroll>
