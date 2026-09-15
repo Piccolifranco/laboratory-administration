@@ -46,7 +46,15 @@ export async function adminDb() {
  * session alive.
  *
  * Errors are returned, not thrown, and the caller is expected to ignore them.
+ *
+ * The "local" scope is explicit and load-bearing. `admin.signOut` defaults to
+ * "global", which revokes every session for the user on every device — and the
+ * clinic shares one account, so a global logout at the front desk would throw
+ * the doctor out of her own session mid-report. A logout that unpredictably
+ * disrupts a colleague teaches people never to log out at all, which is worse
+ * for security than the narrower scope. The answer to a lost device is changing
+ * the account password, which revokes everything.
  */
 export async function revokeSession(accessToken: string) {
-  return client.auth.admin.signOut(accessToken);
+  return client.auth.admin.signOut(accessToken, "local");
 }
