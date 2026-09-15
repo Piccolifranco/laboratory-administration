@@ -4,36 +4,37 @@ import { useRouter } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Image from "next/image";
-import { supabase } from "./utils/supabaseClient";
 
 export default function Home() {
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const signedInUser = await supabase.auth.signInWithPassword({
-      email: user,
-      password: password,
-    });
-    if (signedInUser.data.session?.access_token) {
-      localStorage.setItem(
-        "accessToken",
-        signedInUser.data.session?.access_token
-      );
+    setSubmitting(true);
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: user, password }),
+      });
+
+      if (!response.ok) {
+        toast.error("Correo electrónico o contraseña incorrectos");
+        return;
+      }
+
       toast.success("Inicio de sesión exitoso");
-
-      setTimeout(() => {
-        router.push("/pacientes");
-      }, 500);
-    } else {
-      toast.error("Correo electrónico o contraseña incorrectos");
+      // refresh() lets the proxy see the new cookie before we navigate.
+      router.refresh();
+      router.push("/pacientes");
+    } catch {
+      toast.error("No se pudo conectar. Revisá tu conexión e intentá de nuevo.");
+    } finally {
+      setSubmitting(false);
     }
-    console.log("ACCESS TOKEN: ", signedInUser.data);
-
-    // Verificar las credenciales
-    // if (user === validUser && password === validPassword) {
   };
 
   return (
@@ -87,20 +88,6 @@ export default function Home() {
             />
           </div>
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center">
-              <input
-                id="remember_me"
-                name="remember_me"
-                type="checkbox"
-                className="h-4 w-4 text-accent focus:ring-accent-ring border-border-strong rounded"
-              />
-              <label
-                htmlFor="remember_me"
-                className="ml-2 block text-sm text-fg"
-              >
-                Recordarme
-              </label>
-            </div>
             <div className="text-sm">
               <a
                 href="#"
@@ -112,7 +99,8 @@ export default function Home() {
           </div>
           <button
             type="submit"
-            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-fg-inverse bg-surface-inverse hover:bg-surface-inverse-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-ring"
+            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-fg-inverse bg-surface-inverse hover:bg-surface-inverse-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent-ring disabled:opacity-60"
+            disabled={submitting}
           >
             Iniciar Sesión
           </button>
