@@ -9,7 +9,6 @@ import {
   ArrowRightStartOnRectangleIcon,
 } from "@heroicons/react/24/outline";
 import clsx from "clsx";
-import { supabase } from "@/app/utils/supabaseClient";
 
 const navItems = [
   { href: "/pacientes", label: "Pacientes", Icon: UsersIcon, match: "/paciente" },
@@ -26,9 +25,14 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const router = useRouter();
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    localStorage.removeItem("accessToken");
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {
+      // Ignored: the cookie is cleared server-side, and sending the user to the
+      // login screen is the right outcome either way.
+    }
     onNavigate?.();
+    router.refresh();
     router.push("/");
   };
 
