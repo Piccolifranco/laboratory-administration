@@ -28,10 +28,11 @@ This repo has **no test framework**, and the approved spec lists standing one up
 
 | File | Responsibility |
 |---|---|
-| `src/app/utils/sessionCookie.ts` | **Edge-safe.** Cookie name, options, the `StoredSession` shape, and parse/serialize. No `next/headers`, no `server-only` — `proxy.ts` imports this. |
-| `src/app/utils/session.ts` | **Node/server-only.** `readSession()` and `requireSession()` built on `next/headers`. Route Handlers, Server Actions, and Server Components import this. |
-| `src/app/remoteDataSource/supabaseAuth.ts` | Server-only Supabase client using the publishable key, for sign-in only. |
-| `src/app/remoteDataSource/supabaseServerSide.ts` | Server-only `service_role` client. Created here; first used in PR 2. |
+| `src/app/utils/sessionCookie.ts` | **Edge-safe.** Cookie name, options, the `StoredSession` shape, and parse/serialize. Untrusted transport only — not the trust boundary. No `next/headers`, no `server-only` — `proxy.ts` imports this. |
+| `src/app/utils/session.ts` | **Node/server-only.** `readSession()`, and `requireSession()` which verifies the access token with `getClaims()`. The app's only authorization gate. |
+| `src/app/utils/authResponse.ts` | Maps `UnauthorizedError` to a 401 response. No consumer in PR 1; PRs 2 and 3 use it in every handler. |
+| `src/app/remoteDataSource/supabaseAuth.ts` | Server-only Supabase client using the publishable key, for sign-in and token verification only. |
+| `src/app/remoteDataSource/supabaseServerSide.ts` | Server-only `service_role` access. Exports **only** `adminDb()`, which gates itself behind `requireSession()`; the raw client is never exported. |
 | `src/app/api/auth/login/route.ts` | `POST` — verifies credentials, sets the session cookie, returns no token. |
 | `src/app/api/auth/logout/route.ts` | `POST` — revokes the session upstream and clears the cookie. |
 | `src/proxy.ts` | Route guard plus refresh-token rotation. |
@@ -324,6 +325,214 @@ git commit -m "feat(auth): add server-only supabase auth and service_role client
 
 ---
 
+### Task 4b: Apply the design-review corrections
+
+Tasks 2, 3, and 4 were implemented and committed (`d52d345`, `af71987`, `a705fcc`) **before** the design review ran. The review found a full authentication bypass in the design those tasks faithfully implemented, plus several smaller defects. This task supersedes the code in Tasks 2-4; where they disagree, this one wins.
+
+**What was wrong:** the cookie held `{access_token, refresh_token, expires_at}` as plain JSON, `parseSession` checked only that the fields had the right *types*, and nothing ever verified the token — `service_role` meant Postgres never saw it either. `curl -H 'Cookie: lab_session={"access_token":"x","refresh_token":"y","expires_at":9999999999}'` would have been a complete bypass. `httpOnly` and `Secure` do not help: they constrain what a browser does with a cookie the server issued, not what an arbitrary HTTP client puts in a header.
+
+**Files:**
+- Modify: `src/app/utils/sessionCookie.ts`
+- Modify: `src/app/utils/session.ts`
+- Modify: `src/app/remoteDataSource/supabaseServerSide.ts`
+- Modify: `src/app/remoteDataSource/supabaseAuth.ts`
+- Create: `src/app/utils/authResponse.ts`
+- Modify: `next.config.mjs`
+
+- [ ] **Step 1: Harden the cookie options in `sessionCookie.ts`**
+
+Replace the `sessionCookieOptions` block and the file's opening doc comment:
+
+```ts
+/**
+ * Shape and encoding of the session cookie.
+ *
+ * The cookie is UNTRUSTED TRANSPORT, not a credential. Anyone can hand-write a
+ * `Cookie` header, so `parseSession` below is a cheap structural pre-filter and
+ * nothing more. Authenticity is established in `session.ts`, by verifying the
+ * access token's signature.
+ *
+ * Deliberately free of `next/headers` and `server-only` imports: `src/proxy.ts`
+ * runs in the Edge runtime and imports this module. Anything needing
+ * `next/headers` belongs in `session.ts` instead.
+ */
+```
+
+```ts
+export const sessionCookieOptions = {
+  httpOnly: true,
+  // Hardcoded rather than tied to NODE_ENV: production is always HTTPS, and
+  // browsers accept Secure cookies on localhost, so the branch bought nothing
+  // except a failure mode where the cookie silently ships insecure.
+  secure: true,
+  sameSite: "lax" as const,
+  path: "/",
+  maxAge: MAX_AGE_SECONDS,
+};
+```
+
+Leave `parseSession`, `serializeSession`, `isExpiring`, `SESSION_COOKIE`, `MAX_AGE_SECONDS`, and `StoredSession` exactly as they are.
+
+- [ ] **Step 2: Make `requireSession()` actually verify, in `session.ts`**
+
+Add the `supabaseAuth` import and replace `requireSession`. `readSession` and `UnauthorizedError` are unchanged.
+
+```ts
+import { supabaseAuth } from "@/app/remoteDataSource/supabaseAuth";
+```
+
+```ts
+/**
+ * The single authorization gate for this app.
+ *
+ * Because the server talks to Supabase with the service_role key, Postgres no
+ * longer authorizes anything — this is the only access control. So the cookie
+ * is treated as untrusted transport and the token inside it is verified:
+ * `getClaims` checks the signature against the project's JWKS and, unless
+ * `allowExpired` is set, validates `exp` against the current time. Trusting the
+ * cookie's own `expires_at` field instead would let an attacker pick it.
+ */
+export async function requireSession(): Promise<StoredSession> {
+  const session = await readSession();
+  if (!session) throw new UnauthorizedError();
+
+  const { data, error } = await supabaseAuth.auth.getClaims(session.access_token);
+  if (error || !data) {
+    throw new UnauthorizedError("Invalid or expired session token");
+  }
+
+  return session;
+}
+```
+
+- [ ] **Step 3: Stop exporting the ungated admin client, in `supabaseServerSide.ts`**
+
+Replace the `export const supabaseAdmin = ...` declaration with a private client plus a gated accessor, and add the import:
+
+```ts
+import { requireSession } from "@/app/utils/session";
+```
+
+```ts
+const client = createClient<Database>(url, key, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
+
+/**
+ * The only way to reach patient data. Bypasses RLS completely, so it gates
+ * itself: there is deliberately no exported expression in this codebase that
+ * yields an ungated admin client. Throws `UnauthorizedError` when there is no
+ * valid session.
+ *
+ * Never import this module from `src/proxy.ts`, directly or transitively —
+ * that would inline SUPABASE_SERVICE_ROLE_KEY into the Edge bundle deployed
+ * across Vercel's edge network.
+ */
+export async function adminDb() {
+  await requireSession();
+  return client;
+}
+```
+
+No import cycle results: `session.ts` imports `supabaseAuth.ts`, never this file.
+
+- [ ] **Step 4: Correct the false comment in `supabaseAuth.ts`**
+
+The current comment claims `persistSession: false` prevents cross-request token leakage. It does not. In `@supabase/auth-js` 2.106.2 (`GoTrueClient.js:203-204`), that option swaps `localStorage` for an in-memory adapter held **on the client instance** — and the instance is a module singleton, so the state is shared across every request that lands on the process. Replace the comment:
+
+```ts
+/**
+ * Sign-in only. Kept separate from the service_role client so that nothing in
+ * the auth path can reach data with admin privileges.
+ *
+ * `persistSession: false` prevents localStorage writes and NOTHING MORE: it
+ * swaps in an in-memory store held on this module singleton, shared by every
+ * request on this process. Cross-request isolation therefore comes from never
+ * relying on the client's ambient session — always pass tokens explicitly.
+ * Never call `refreshSession()` with no argument, `getSession()`, or
+ * `setSession()` on this client.
+ */
+```
+
+- [ ] **Step 5: Create the 401 mapping helper**
+
+`requireSession()` throws, which is correct — a forgotten `if (!result.ok)` continues silently, a thrown error cannot be ignored. But an uncaught throw surfaces as a **500**, so callers could not tell "log in again" from "the server is broken". This helper is the shared mapping. It has no consumer in PR 1; PRs 2 and 3 use it in every Route Handler.
+
+`src/app/utils/authResponse.ts`:
+
+```ts
+import "server-only";
+import { NextResponse } from "next/server";
+import { UnauthorizedError } from "./session";
+
+/** True when the error came from `requireSession()` rejecting a request. */
+export function isUnauthorized(error: unknown): error is UnauthorizedError {
+  return error instanceof UnauthorizedError;
+}
+
+/**
+ * The 401 every Route Handler returns when `requireSession()` throws. Carries
+ * no detail: a client that is not authorized has no business learning why.
+ */
+export function unauthorizedResponse(): NextResponse {
+  return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+}
+```
+
+- [ ] **Step 6: Fail the build when required env vars are missing**
+
+The module-level `throw`s added in Task 4 do not fail `next build` — nothing imports those modules at build time, so Vercel deploys green and the first real request 500s. Worse, Next inlines statically-referenced `process.env.*` into the Edge bundle, so a variable added in the dashboard *after* a bad build does not take effect until a redeploy.
+
+Add this to the top of `next.config.mjs`, above the `nextConfig` declaration:
+
+```js
+const REQUIRED_ENV = [
+  "SUPABASE_URL",
+  "SUPABASE_PUBLISHABLE_KEY",
+  "SUPABASE_SERVICE_ROLE_KEY",
+];
+
+const missing = REQUIRED_ENV.filter((name) => !process.env[name]);
+if (missing.length > 0) {
+  throw new Error(
+    `Missing required environment variables: ${missing.join(", ")}. See .env.example.`
+  );
+}
+```
+
+- [ ] **Step 7: Verify**
+
+Run: `pnpm exec tsc --noEmit 2>&1 | grep -c "error TS"`
+Expected: `15`.
+
+Run: `pnpm exec tsc --noEmit 2>&1 | grep -E "session|supabase|authResponse"`
+Expected: no output.
+
+Confirm the ungated client is gone — run: `grep -rn "supabaseAdmin" src/`
+Expected: no output. If anything still references `supabaseAdmin`, the rename is incomplete.
+
+Confirm `file` reports CRLF on every file you touched.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add src/app/utils/sessionCookie.ts src/app/utils/session.ts \
+  src/app/utils/authResponse.ts src/app/remoteDataSource/supabaseServerSide.ts \
+  src/app/remoteDataSource/supabaseAuth.ts next.config.mjs
+git commit -m "fix(auth): verify the session token instead of trusting the cookie
+
+Design review found that the cookie was treated as a credential while
+having none of the properties of one: parseSession checked types, not
+authenticity, and service_role meant Postgres never saw the token. A
+hand-written Cookie header was a full authentication bypass.
+
+requireSession now verifies the access token with getClaims, which also
+validates exp. The admin client is no longer exported at all — adminDb()
+gates itself, so the ungated path stops existing."
+```
+
+---
+
 ### Task 5: Login route handler
 
 **Files:**
@@ -375,13 +584,33 @@ export async function POST(request: Request) {
   const session: StoredSession = {
     access_token: data.session.access_token,
     refresh_token: data.session.refresh_token,
-    expires_at: data.session.expires_at ?? 0,
+    // NOT `?? 0`. A zero here poisons the cookie: `isExpiring` would return
+    // true forever, so the proxy would attempt a refresh on every single
+    // request. Supabase rotates refresh tokens on use, so concurrent requests
+    // would race, one would present an already-consumed token, Supabase would
+    // treat it as reuse and revoke the session — logging the doctor out
+    // mid-report, apparently at random.
+    expires_at:
+      data.session.expires_at ??
+      Math.floor(Date.now() / 1000) + (data.session.expires_in ?? 3600),
   };
+
+  const serialized = serializeSession(session);
+
+  // Browsers drop an oversized Set-Cookie *silently*: the user would be bounced
+  // back to the login screen with a 200 and no error anywhere. Fail loudly
+  // instead. A real Supabase session serializes to roughly 1.1KB.
+  if (serialized.length > 3500) {
+    console.error(
+      `Session cookie too large (${serialized.length} bytes); refusing to set it.`
+    );
+    return NextResponse.json({ error: "Error de sesión" }, { status: 500 });
+  }
 
   // The body carries no token. The cookie is httpOnly, so the browser's
   // JavaScript never sees one either.
   const response = NextResponse.json({ ok: true });
-  response.cookies.set(SESSION_COOKIE, serializeSession(session), sessionCookieOptions);
+  response.cookies.set(SESSION_COOKIE, serialized, sessionCookieOptions);
   return response;
 }
 ```
@@ -617,7 +846,19 @@ curl -s -o /dev/null -w "%{http_code} -> %{redirect_url}\n" \
 
 Expected: `307 -> http://localhost:3000/` — `parseSession` returns null on malformed input, so this is treated as logged out.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Verify a FORGED but well-formed cookie does not get past the proxy's own check**
+
+```bash
+curl -s -o /dev/null -w "%{http_code} -> %{redirect_url}\n" \
+  -H 'Cookie: lab_session={"access_token":"x","refresh_token":"y","expires_at":9999999999}' \
+  http://localhost:3000/pacientes
+```
+
+Expected: `200`. **This is correct and is not a bug.** The proxy is not the trust boundary — it deliberately does not verify signatures, because it only does cheap checks and token rotation. The forged cookie gets past it and no further: every path to patient data goes through `adminDb()` → `requireSession()` → `getClaims()`, which rejects it. Task 10 asserts that end of it.
+
+Note this exact request is what a complete authentication bypass looked like in the original design, when `requireSession()` did no verification. Keep the command; it is the regression test for the worst bug this round has produced.
+
+- [ ] **Step 7: Commit**
 
 ```bash
 git add src/proxy.ts
