@@ -18,7 +18,29 @@
 
 This repo has **no test framework**, and the approved spec lists standing one up as an explicit non-goal. So this plan does not open with failing unit tests. Every task still ends with a **concrete command and its expected output** — that requirement is not relaxed. Do not mark a step done without running the command and seeing the expected result.
 
-**TypeScript baseline:** `pnpm exec tsc --noEmit` currently reports **15 errors**, all in `src/app/ui/NewVisitaDialogBody/NewVisitaDialogBody.tsx`, `src/app/ui/NewVisitaDialogBody/defaultValues.ts`, and `src/app/ui/status.tsx`. None are in files this PR touches. The verification bar for every task is therefore **"still exactly 15 errors, none of them in a file this PR created or modified"** — not zero. If the count rises, you broke something.
+**TypeScript baseline:** `pnpm exec tsc --noEmit` currently reports **15 errors**, distributed as:
+
+| Count | File |
+|---|---|
+| 8 | `src/app/ui/NewVisitaDialogBody/NewVisitaDialogBody.tsx` |
+| 2 | `src/app/remoteDataSource/supabase.ts` |
+| 1 | `src/app/ui/NewVisitaDialogBody/defaultValues.ts` |
+| 1 | `src/app/ui/status.tsx` |
+| 1 | `src/app/page.tsx` — `TS7006: Parameter 'e' implicitly has an 'any' type` |
+| 2 | wrapped continuation lines from the `supabase.ts` errors |
+
+The bar for every task is **"still exactly 15 errors, none in a file the task created or modified"** — not zero.
+
+**Two exceptions to that bar, both in files this PR does touch:**
+
+- **Task 8 lowers the baseline to 14.** The `page.tsx` error is precisely the untyped `handleLogin(e)` that Task 8 replaces with `React.FormEvent<HTMLFormElement>`. After Task 8 the expected count is **14**, and it stays 14 for Tasks 9 and 10.
+- The two `supabase.ts` errors are in the browser client, which this PR does not touch. They disappear in PR 4 when that file is deleted.
+
+**Use a narrow grep when checking for new errors.** A pattern like `supabase` matches the pre-existing `supabase.ts` errors and produces a false alarm. Match the specific files instead:
+
+```bash
+pnpm exec tsc --noEmit 2>&1 | grep -E "sessionCookie|utils/session|authResponse|supabaseAuth|supabaseServerSide|api/auth|proxy"
+```
 
 **Encoding:** files in this repo are UTF-8 with CRLF line endings and no BOM. Prefer `Edit` or `sed` over wholesale rewrites, and after editing a file containing accented Spanish text, confirm the accents survived (`grep -n "contraseña" <file>`).
 
@@ -941,12 +963,15 @@ Expected:
 - In DevTools → Application → Local Storage, there is **no** `accessToken` entry. (If one lingers from a previous session, delete it manually — old browsers keep it until cleared.)
 - The Console shows no logged access token.
 
-- [ ] **Step 7: Verify types did not regress**
+- [ ] **Step 7: Verify types improved**
 
 Run: `pnpm exec tsc --noEmit 2>&1 | grep -c "error TS"`
-Expected: `15`.
+Expected: **`14`**, not 15. This is the one task in the PR that lowers the baseline: the pre-existing `src/app/page.tsx(14,30): error TS7006: Parameter 'e' implicitly has an 'any' type` is exactly the `handleLogin(e)` you just typed. Tasks 9 and 10 expect 14 from here on.
+
 Run: `pnpm exec tsc --noEmit 2>&1 | grep "app/page.tsx"`
-Expected: no output — `handleLogin` is now typed, so the old implicit-`any` on `e` is gone.
+Expected: no output.
+
+If the count is still 15 and `page.tsx` still appears, the type annotation did not land — check that you wrote `React.FormEvent<HTMLFormElement>` and not a bare `React.FormEvent`.
 
 - [ ] **Step 8: Verify the accented text survived the edit**
 
@@ -1069,3 +1094,18 @@ Repeat Step 6 against the preview URL, and confirm the `lab_session` cookie show
 - It does not move any data query server-side — that is PRs 2 and 3.
 - It does not remove `typescript.ignoreBuildErrors`. Planning turned up 15 pre-existing type errors in `NewVisitaDialogBody.tsx`, `defaultValues.ts`, and `status.tsx`; clearing them is unrelated work that would stall this round.
 - It does not add a test framework, per the spec's non-goals.
+
+---
+
+## Hard rule: never touch the database schema
+
+The `pacientes` table has been in production use for years and holds real patient
+medical records. There is no staging copy.
+
+**Never run a migration, `supabase db push`, `supabase db reset`, `DROP`, or a
+destructive `ALTER` against this project.** Nothing in this PR touches the database at
+all. PR 4 runs one statement — `ALTER TABLE public.pacientes ENABLE ROW LEVEL
+SECURITY` — which changes no data and no schema and is reversible in one command, and
+even that is executed by the repo owner in the Supabase dashboard, not by an agent.
+
+If a task ever seems to require a schema change, stop and escalate instead.
