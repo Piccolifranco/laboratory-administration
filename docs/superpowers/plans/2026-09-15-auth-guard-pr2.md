@@ -27,8 +27,27 @@ PR 1 built the foundation this plan consumes. What matters here:
 
 ## Verification baselines
 
-- `pnpm exec tsc --noEmit 2>&1 | grep -c "error TS"` reports **14**. Not zero. Two of those are in `src/app/remoteDataSource/supabase.ts`, which this PR still does not delete.
-- Use narrow greps when checking for new errors: `grep -E "api/pacientes|useInfinitePacientes|Table|pacientes/types"`. A bare `supabase` matches pre-existing errors.
+`pnpm exec tsc --noEmit 2>&1 | grep -c "error TS"` reports **14**, not zero, distributed as:
+
+| Count | File |
+|---|---|
+| 8 | `src/app/ui/NewVisitaDialogBody/NewVisitaDialogBody.tsx` |
+| 2 | `src/app/remoteDataSource/supabase.ts` |
+| 1 | `src/app/ui/status.tsx` |
+| 1 | `src/app/ui/NewVisitaDialogBody/defaultValues.ts` |
+| 1 | `src/app/(app)/pacientes/pacientes-component.tsx` — `InfiniteScroll` missing its required `loader` prop |
+| 1 | `src/app/(app)/paciente/[id]/page.tsx` — `.eq("id", pacienteId)` passes a string where the column is a number |
+
+**Two of these sit in files this PR modifies**, so "no output from a narrow grep" is the wrong bar for them. `pacientes-component.tsx` and `paciente/[id]/page.tsx` each keep exactly one pre-existing error throughout. The bar is the **count staying at 14**, plus no error naming a file the task created.
+
+To get an accurate per-file breakdown, note that paths here contain parentheses (`(app)`), so a regex stopping at the first `(` mangles them:
+
+```bash
+pnpm exec tsc --noEmit 2>&1 | grep -E "^.+\([0-9]+,[0-9]+\): error" \
+  | sed -E 's/\([0-9]+,[0-9]+\): error.*//' | sort | uniq -c | sort -rn
+```
+
+Use narrow greps naming the new files only: `grep -E "api/pacientes|pacientes/types"`. A bare `supabase` matches pre-existing errors in `supabase.ts`.
 - No test framework, and adding one is out of scope per the spec.
 
 ## Hard rules
