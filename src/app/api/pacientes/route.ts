@@ -42,9 +42,15 @@ function latestVisitDate(visitas: Visitas[] | null | undefined): string | null {
   return latest === null ? null : new Date(latest).toISOString();
 }
 
-/** Escapes LIKE wildcards so a patient surname containing % or _ searches literally. */
+/**
+ * Escapes LIKE wildcards so a patient surname containing % or _ searches
+ * literally. The backslashes are doubled on purpose: `\\` is one literal
+ * backslash in the pattern, and in the replacement `` `\\${char}` `` produces
+ * backslash-plus-character. Writing `` `\${char}` `` instead escapes the dollar
+ * sign and emits the literal text "${char}", which is the opposite of escaping.
+ */
 function escapeLike(term: string): string {
-  return term.replace(/[\%_]/g, (char) => `\${char}`);
+  return term.replace(/[\\%_]/g, (char) => `\\${char}`);
 }
 
 export async function GET(request: Request) {
