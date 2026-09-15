@@ -30,3 +30,23 @@ export async function adminDb() {
   await requireSession();
   return client;
 }
+
+/**
+ * Revokes a session upstream at Supabase, killing its refresh token.
+ *
+ * The one export here that is NOT gated behind `requireSession()`, and
+ * deliberately so: logout must work for an expired, revoked or otherwise
+ * invalid session — precisely the case where `requireSession()` throws. Gating
+ * it would turn logout into a 500 for the user who most needs it to succeed.
+ *
+ * Safe to leave ungated because it grants no read or write access to patient
+ * data: the only thing it can do with the token it is handed is destroy that
+ * token's own session. The worst an attacker with a stolen access token can
+ * achieve is logging its owner out, which is strictly better than keeping the
+ * session alive.
+ *
+ * Errors are returned, not thrown, and the caller is expected to ignore them.
+ */
+export async function revokeSession(accessToken: string) {
+  return client.auth.admin.signOut(accessToken);
+}
