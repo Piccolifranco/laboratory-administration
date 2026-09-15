@@ -84,7 +84,9 @@ ALTER TABLE public.pacientes ENABLE ROW LEVEL SECURITY;
 
 No policies are created. Confirm in the dashboard that no other table in `public` is missing RLS before flipping, and enable it on any that are.
 
-Also drop `typescript.ignoreBuildErrors` from `next.config.mjs` — silently ignored type errors are unacceptable in code that handles sessions. Add the `requireSession()` coverage check.
+Add the `requireSession()` coverage check.
+
+Removing `typescript.ignoreBuildErrors` from `next.config.mjs` was originally scoped here, but planning found **15 pre-existing type errors** in `NewVisitaDialogBody.tsx`, `defaultValues.ts`, and `status.tsx` — files this round does not touch. Dropping the flag would fail the build on unrelated code during the most delicate PR of the round, so it is deferred to its own piece of work.
 
 ## Verification
 
