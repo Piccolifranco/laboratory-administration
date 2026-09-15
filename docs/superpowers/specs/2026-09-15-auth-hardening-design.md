@@ -33,7 +33,7 @@ This work moves all Supabase access behind the Next.js server, puts the session 
 
 ### Supabase clients (server only)
 
-- `src/app/remoteDataSource/supabaseServerSide.ts` — currently an empty file; becomes the `service_role` client used for all data access. Reads `SUPABASE_SERVICE_ROLE_KEY` (**not** `NEXT_PUBLIC_`). Starts with `import "server-only"` so the build fails loudly if a client component ever imports it.
+- `src/app/remoteDataSource/supabaseServerSide.ts` — currently an empty file; becomes the `service_role` client used for all data access. Reads `SUPABASE_SECRET_KEY` (**not** `NEXT_PUBLIC_`). Starts with `import "server-only"` so the build fails loudly if a client component ever imports it.
 - `src/app/remoteDataSource/supabaseAuth.ts` — a separate auth-only client, publishable key, server-side only, used solely for `signInWithPassword` and `refreshSession`. Kept apart from the `service_role` client so that nothing in the auth path can accidentally reach data with admin privileges.
 
 ### Session cookie

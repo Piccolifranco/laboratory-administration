@@ -4,11 +4,11 @@ import type { Database } from "@/types/supabase";
 import { requireSession } from "@/app/utils/session";
 
 const url = process.env.SUPABASE_URL;
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const key = process.env.SUPABASE_SECRET_KEY;
 
 if (!url || !key) {
   throw new Error(
-    "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set (see .env.example)"
+    "SUPABASE_URL and SUPABASE_SECRET_KEY must be set (see .env.example)"
   );
 }
 
@@ -23,7 +23,7 @@ const client = createClient<Database>(url, key, {
  * valid session.
  *
  * Never import this module from `src/proxy.ts`, directly or transitively —
- * that would inline SUPABASE_SERVICE_ROLE_KEY into the Edge bundle deployed
+ * that would inline SUPABASE_SECRET_KEY into the Edge bundle deployed
  * across Vercel's edge network.
  */
 export async function adminDb() {

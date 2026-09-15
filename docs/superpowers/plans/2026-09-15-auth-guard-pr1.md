@@ -77,12 +77,12 @@ Add these three lines. `SUPABASE_PUBLISHABLE_KEY` takes the same value that `NEX
 ```
 SUPABASE_URL=https://lylnvhhzhyqlbbjgymws.supabase.co
 SUPABASE_PUBLISHABLE_KEY=<same value as NEXT_PUBLIC_SUPABASE_API_KEY>
-SUPABASE_SERVICE_ROLE_KEY=<service_role key from the Supabase dashboard>
+SUPABASE_SECRET_KEY=<service_role key from the Supabase dashboard>
 ```
 
 Leave `NEXT_PUBLIC_SUPABASE_API_KEY` in place — the browser still needs it until PR 4.
 
-**None of the three carries a `NEXT_PUBLIC_` prefix, and `SUPABASE_SERVICE_ROLE_KEY` must never gain one.** That key bypasses RLS entirely; prefixing it would publish full database admin rights in the client bundle.
+**None of the three carries a `NEXT_PUBLIC_` prefix, and `SUPABASE_SECRET_KEY` must never gain one.** That key bypasses RLS entirely; prefixing it would publish full database admin rights in the client bundle.
 
 - [ ] **Step 2: Create `.env.example` so the required variables are documented in the repo**
 
@@ -91,7 +91,7 @@ Leave `NEXT_PUBLIC_SUPABASE_API_KEY` in place — the browser still needs it unt
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 # Bypasses RLS. Server-side only, never logged, never NEXT_PUBLIC_.
-SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+SUPABASE_SECRET_KEY=your-service-role-key
 
 # Browser Supabase client. Removed in PR 4 of the auth hardening round.
 NEXT_PUBLIC_SUPABASE_API_KEY=your-publishable-key
@@ -311,11 +311,11 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "@/types/supabase";
 
 const url = process.env.SUPABASE_URL;
-const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const key = process.env.SUPABASE_SECRET_KEY;
 
 if (!url || !key) {
   throw new Error(
-    "SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set (see .env.example)"
+    "SUPABASE_URL and SUPABASE_SECRET_KEY must be set (see .env.example)"
   );
 }
 
@@ -447,7 +447,7 @@ const client = createClient<Database>(url, key, {
  * valid session.
  *
  * Never import this module from `src/proxy.ts`, directly or transitively —
- * that would inline SUPABASE_SERVICE_ROLE_KEY into the Edge bundle deployed
+ * that would inline SUPABASE_SECRET_KEY into the Edge bundle deployed
  * across Vercel's edge network.
  */
 export async function adminDb() {
@@ -511,7 +511,7 @@ Add this to the top of `next.config.mjs`, above the `nextConfig` declaration:
 const REQUIRED_ENV = [
   "SUPABASE_URL",
   "SUPABASE_PUBLISHABLE_KEY",
-  "SUPABASE_SERVICE_ROLE_KEY",
+  "SUPABASE_SECRET_KEY",
 ];
 
 const missing = REQUIRED_ENV.filter((name) => !process.env[name]);
@@ -1052,7 +1052,7 @@ Vercel Dashboard → Project → Settings → Environment Variables → remove `
 
 - [ ] **Step 3: Add the new variables in Vercel**
 
-Add `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` to Production, Preview, and Development.
+Add `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `SUPABASE_SECRET_KEY` to Production, Preview, and Development.
 
 **Check the name of the service role variable twice before saving.** A `NEXT_PUBLIC_` prefix on it would publish database admin rights to every visitor.
 
