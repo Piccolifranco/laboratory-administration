@@ -123,10 +123,10 @@ function NewVisitaDialogBody({
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="bg-card text-card-foreground shadow-sm w-full max-w-[90%] mx-auto flex flex-col"
+      className="bg-card text-card-foreground shadow-sm w-full md:max-w-[90%] mx-auto flex flex-col"
       data-v0-t="card"
     >
-      <div className="p-4 space-y-2 grid grid-cols-3 gap-x-8">
+      <div className="p-4 space-y-2 grid grid-cols-1 gap-x-8 md:grid-cols-3">
         <div className="flex flex-col gap-5 mt-4">
           <div className="space-y-2">
             <label

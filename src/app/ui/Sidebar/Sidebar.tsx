@@ -21,13 +21,14 @@ const navItems = [
   },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     localStorage.removeItem("accessToken");
+    onNavigate?.();
     router.push("/");
   };
 
@@ -47,6 +48,7 @@ export function Sidebar() {
             <Link
               key={href}
               href={href}
+              onClick={onNavigate}
               className={clsx(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
                 active
