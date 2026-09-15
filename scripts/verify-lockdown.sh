@@ -7,13 +7,11 @@
 # the session cookie, or the auth route handlers. It exits non-zero if a check
 # fails, so it is safe to wire into CI once a preview URL is available.
 #
-# Check 1 is the important one, and its EXPECTATION CHANGES IN PR 2. Today a
-# forged session cookie returns 200, because the proxy is deliberately not the
-# trust boundary: it never verifies a token signature, it only looks at the
-# cookie's shape. `requireSession()` does the verifying, and in PR 1 there is no
-# data endpoint behind it yet, so nothing is exposed. Once PR 2 adds
-# GET /api/pacientes, this check must return 401 and must be promoted from INFO
-# to a hard FAIL. It is the single most important check in this file: it is the
+# Check 1 is the important one, and it must always be 401. The proxy is
+# deliberately not the trust boundary: it never verifies a token signature, it
+# only looks at the cookie's shape. `requireSession()` does the verifying, and
+# every data endpoint sits behind it. A forged session cookie must therefore be
+# rejected by the data endpoint, not merely waved past the proxy. It is the
 # check that would have caught the authentication bypass an earlier draft of
 # this design shipped.
 #
@@ -30,13 +28,19 @@ failures=0
 echo "Verifying lockdown against $BASE"
 echo
 
-# --- Check 1: forged session cookie ------------------------------------------
+# --- Check 1: forged session cookie is rejected -------------------------------
+# The single most important check in this file. An unsigned, hand-written cookie
+# must not reach patient data. An earlier draft of this design shipped a version
+# where it did: parseSession only type-checked the cookie, nothing verified the
+# token, and service_role meant Postgres never saw it either. Every other check
+# here passed while the database was wide open.
 FORGED='lab_session={"access_token":"x","refresh_token":"y","expires_at":9999999999}'
-code=$(curl -s -o /dev/null -w '%{http_code}' -H "Cookie: $FORGED" "$BASE/pacientes")
-if [ "$code" = "200" ]; then
-  echo "INFO  forged cookie -> $code (expected for PR 1; must become 401 in PR 2)"
+code=$(curl -s -o /dev/null -w '%{http_code}' -H "Cookie: $FORGED" "$BASE/api/pacientes")
+if [ "$code" = "401" ]; then
+  echo "PASS  forged cookie -> 401"
 else
-  echo "INFO  forged cookie -> $code (expected 200 in PR 1; investigate)"
+  echo "FAIL  forged cookie -> $code (expected 401)"
+  failures=$((failures + 1))
 fi
 
 # --- Check 2: unauthenticated access redirects to the login page -------------
@@ -61,6 +65,15 @@ elif grep -rl "sb_secret" "$ROOT/.next/static/" >/dev/null 2>&1; then
   failures=$((failures + 1))
 else
   echo "PASS  no sb_secret in the client bundle"
+fi
+
+# --- Check 4: the list endpoint requires a session ----------------------------
+code=$(curl -s -o /dev/null -w '%{http_code}' "$BASE/api/pacientes")
+if [ "$code" = "401" ]; then
+  echo "PASS  no cookie -> /api/pacientes 401"
+else
+  echo "FAIL  no cookie -> /api/pacientes $code (expected 401)"
+  failures=$((failures + 1))
 fi
 
 echo
