@@ -1,6 +1,11 @@
 /**
  * Shape and encoding of the session cookie.
  *
+ * The cookie is UNTRUSTED TRANSPORT, not a credential. Anyone can hand-write a
+ * `Cookie` header, so `parseSession` below is a cheap structural pre-filter and
+ * nothing more. Authenticity is established in `session.ts`, by verifying the
+ * access token's signature.
+ *
  * Deliberately free of `next/headers` and `server-only` imports: `src/proxy.ts`
  * runs in the Edge runtime and imports this module. Anything needing
  * `next/headers` belongs in `session.ts` instead.
@@ -20,7 +25,10 @@ export type StoredSession = {
 
 export const sessionCookieOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
+  // Hardcoded rather than tied to NODE_ENV: production is always HTTPS, and
+  // browsers accept Secure cookies on localhost, so the branch bought nothing
+  // except a failure mode where the cookie silently ships insecure.
+  secure: true,
   sameSite: "lax" as const,
   path: "/",
   maxAge: MAX_AGE_SECONDS,

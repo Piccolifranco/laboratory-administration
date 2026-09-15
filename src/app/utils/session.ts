@@ -1,5 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { supabaseAuth } from "@/app/remoteDataSource/supabaseAuth";
 import {
   SESSION_COOKIE,
   parseSession,
@@ -24,12 +25,20 @@ export async function readSession(): Promise<StoredSession | null> {
  * The single authorization gate for this app.
  *
  * Because the server talks to Supabase with the service_role key, Postgres no
- * longer authorizes anything — this cookie is the only access control. Every
- * Route Handler and every Server Action that touches data must call this first.
- * A handler that forgets is a fully open, admin-privileged endpoint.
+ * longer authorizes anything — this is the only access control. So the cookie
+ * is treated as untrusted transport and the token inside it is verified:
+ * `getClaims` checks the signature against the project's JWKS and, unless
+ * `allowExpired` is set, validates `exp` against the current time. Trusting the
+ * cookie's own `expires_at` field instead would let an attacker pick it.
  */
 export async function requireSession(): Promise<StoredSession> {
   const session = await readSession();
   if (!session) throw new UnauthorizedError();
+
+  const { data, error } = await supabaseAuth.auth.getClaims(session.access_token);
+  if (error || !data) {
+    throw new UnauthorizedError("Invalid or expired session token");
+  }
+
   return session;
 }
