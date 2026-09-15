@@ -976,7 +976,7 @@ If the count is still 15 and `page.tsx` still appears, the type annotation did n
 - [ ] **Step 8: Verify the accented text survived the edit**
 
 Run: `grep -c "Contraseña" src/app/page.tsx`
-Expected: `1` (and it must read `Contraseña`, not `ContraseÃ±a`).
+Expected: `2` — the `<label>` and the `placeholder`. (The third occurrence, in "¿Olvidaste tu contraseña?", is lowercase and does not match.) Both must read `Contraseña`, not `ContraseÃ±a`. Also run `grep -c 'Ã' src/app/page.tsx` and expect `0`.
 
 - [ ] **Step 9: Commit**
 
