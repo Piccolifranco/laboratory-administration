@@ -1,13 +1,16 @@
 "use client";
 import React, { useEffect } from "react";
-import { Paciente } from "../../../../types/supabase";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { updatePaciente } from "../../remoteDataSource/supabase";
+import type {
+  PacienteEditableFields,
+  PacienteListItem,
+} from "@/app/(app)/pacientes/types";
 import { useRemoveQueryParam } from "@/app/utils/removeQueryParams";
 import { useRouter } from "next/navigation";
 
 interface EditPacienteDialogBodyProps {
-  paciente: Paciente; // Los datos del paciente a editar
+  paciente: PacienteListItem; // Los datos del paciente a editar
 }
 
 function EditPacienteDialogBody({ paciente }: EditPacienteDialogBodyProps) {
@@ -16,11 +19,18 @@ function EditPacienteDialogBody({ paciente }: EditPacienteDialogBodyProps) {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<Paciente>({
-    defaultValues: paciente,
+  } = useForm<PacienteEditableFields>({
+    defaultValues: {
+      firstName: paciente.firstName,
+      lastName: paciente.lastName,
+      age: paciente.age,
+      dni: paciente.dni,
+      doctor: paciente.doctor,
+      obraSocial: paciente.obraSocial,
+    },
   });
   const router = useRouter();
-  const onSubmit: SubmitHandler<Paciente> = async (data) => {
+  const onSubmit: SubmitHandler<PacienteEditableFields> = async (data) => {
     const updatedPaciente = await updatePaciente(paciente.id, data);
     removeQueryParams();
     console.log({ updatedPaciente });

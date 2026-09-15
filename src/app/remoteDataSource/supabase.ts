@@ -1,6 +1,7 @@
 "use client";
 import { createClient } from "@supabase/supabase-js";
-import type { Database, Paciente } from "../../../types/supabase";
+import type { Database, Paciente, Visitas } from "../../../types/supabase";
+import type { PacienteEditableFields } from "@/app/(app)/pacientes/types";
 
 export const supabase = createClient<Database>(
   "https://lylnvhhzhyqlbbjgymws.supabase.co",
@@ -10,10 +11,23 @@ export const supabase = createClient<Database>(
 export const addPaciente = async (data: Paciente) =>
   await supabase.from("pacientes").insert(data);
 
-export const updatePaciente = async (id: number, updates: Paciente) => {
+export const updatePaciente = async (
+  id: number,
+  updates: PacienteEditableFields
+) => {
+  // Only the editable fields, never the whole row: the row now carries a
+  // derived `ultimaVisita` that is not a column, and a wholesale write could
+  // also clobber the visitas array.
   const { data, error } = await supabase
     .from("pacientes")
-    .update(updates)
+    .update({
+      firstName: updates.firstName,
+      lastName: updates.lastName,
+      age: updates.age,
+      dni: updates.dni,
+      doctor: updates.doctor,
+      obraSocial: updates.obraSocial,
+    })
     .eq("id", id)
     .single();
 
@@ -21,8 +35,27 @@ export const updatePaciente = async (id: number, updates: Paciente) => {
     console.error("Error updating paciente:", error);
     return error;
   }
-  console.log({ data });
+  return data;
+};
 
+/**
+ * Writes only the visitas column.
+ *
+ * Separate from `updatePaciente` so neither function can clobber the other's
+ * columns: saving a report must never touch the patient's details, and editing
+ * the patient's details must never touch their reports.
+ */
+export const updatePacienteVisitas = async (id: number, visitas: Visitas[]) => {
+  const { data, error } = await supabase
+    .from("pacientes")
+    .update({ visitas })
+    .eq("id", id)
+    .single();
+
+  if (error) {
+    console.error("Error updating visitas:", error);
+    return error;
+  }
   return data;
 };
 
