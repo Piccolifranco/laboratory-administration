@@ -24,7 +24,8 @@ This work moves all Supabase access behind the Next.js server, puts the session 
 - **The browser never holds a token.** Session lives in an `httpOnly` cookie. This rules out the stock `@supabase/ssr` browser-client pattern, which stores the session in a JS-readable `document.cookie` so the browser can query Supabase directly.
 - **All data access moves server-side** — Route Handlers and Server Actions. This is the "backend" from the modernization plan: no Nest, no Express, no extra hosting.
 - **The server uses `service_role`.** RLS is enabled with **no policies at all**, making the table unreachable for `anon` and `authenticated`. Only the backend gets in. With a single shared clinic account, per-user policies buy nothing.
-- **Sessions are long and self-renewing.** ~90-day cookie, refresh token rotated by the proxy on each visit. The decorative "Recordarme" checkbox is removed — that is now the default behavior.
+- **The cookie is not trusted; the JWT inside it is verified.** The cookie is untrusted transport. Authenticity comes from verifying the `access_token`'s signature with `supabaseAuth.auth.getClaims(token)`, and expiry comes from the verified `exp` claim. See "Cookie authenticity" below — this was added after review found that the original design authorized anyone who hand-wrote a cookie.
+- **Sessions are long and self-renewing.** ~90-day cookie, refresh token rotated by the proxy on each visit. The decorative "Recordarme" checkbox is removed — that is now the default behavior. **This depends on Supabase configuration the code cannot express:** sessions have no time-box and no inactivity timeout by default, so the refresh token is effectively immortal until Auth → Sessions is configured in the dashboard. Set both there and record the values here.
 - **Four sequential PRs**, each deployable with the app working.
 - **`src/proxy.ts`, not `middleware.ts`.** Next 16 resolves `proxyFilePath || middlewareFilePath`; `proxy` is the canonical name in 16.2.6 and `middleware` is a fallback.
 
@@ -43,11 +44,44 @@ This work moves all Supabase access behind the Next.js server, puts the session 
 
 Runs on protected routes. Reads the cookie; if the access token is near expiry, refreshes it via the refresh token and rewrites the cookie. Redirects to `/` when there is no valid session. Refresh tokens rotate on use, so the session survives indefinitely with regular visits and lapses on its own after prolonged inactivity.
 
+### Cookie authenticity
+
+`httpOnly`, `Secure`, and `SameSite` constrain what a *browser* does with a cookie the server issued. They constrain nothing about what an arbitrary HTTP client puts in a `Cookie` header. A cookie whose contents are merely well-formed is not a credential.
+
+The first draft of this design missed that: the cookie held `{access_token, refresh_token, expires_at}` as plain JSON, the parser checked only that the fields were strings and a number, and nothing ever verified the token — `service_role` meant Postgres never saw it either. `curl -H 'Cookie: lab_session={"access_token":"x","refresh_token":"y","expires_at":9999999999}'` would have been a full authentication bypass, and the verification plan could not have detected it: the Supabase Advisor would read green, no key would appear in the bundle, and the smoke test would pass.
+
+So the JSON wrapper is **untrusted transport**, and the access token inside it is the credential:
+
+- `parseSession` stays exactly as it is, demoted to a cheap structural pre-filter. It is no longer the trust boundary.
+- `requireSession()` verifies the access token's signature with `supabaseAuth.auth.getClaims(token)` and takes expiry from the **verified `exp` claim**, never from the cookie's `expires_at` field.
+- A forged or expired token yields `UnauthorizedError`, the same as no cookie at all.
+
+`getClaims` uses Web Crypto (`crypto.subtle`), so it runs in both the Edge and Node runtimes and needs no new dependency.
+
+**Configuration dependency:** `getClaims` verifies locally against the cached JWKS only for asymmetric signing keys. If the project still uses the legacy HS256 shared secret, it falls back to `getUser()` — a network round trip to Supabase on every verification. The project must be migrated to asymmetric signing keys (Project Settings → JWT Keys) before this ships.
+
+`src/proxy.ts` is not the trust boundary and deliberately does not verify. It does the cheap checks — cookie present, not expired by the wrapper's own claim — and rotates the refresh token. Forging a cookie gets an attacker past the proxy and no further: every path to data goes through `adminDb()`, which verifies.
+
 ### Authorization risk and its mitigation
 
 Because the server uses `service_role`, Postgres no longer authorizes anything — the cookie is the only access control. A Route Handler that forgets its session check is a fully open, admin-privileged endpoint. Previously RLS would have caught that mistake.
 
-Mitigation is structural, not disciplinary: a single `requireSession()` helper in `src/app/utils/session.ts` that returns the session or short-circuits with 401, called as the first line of every handler and every Server Action. `proxy.ts` is a second layer, never the only one. PR 4 adds a check that walks `src/app/api/` and fails if a handler does not call it.
+Mitigation has to be structural, not disciplinary — and review showed the first draft was not. Exporting `supabaseAdmin` as a bare singleton made the insecure handler *shorter* to write than the secure one: one import and no gate. A `grep` for `requireSession` in PR 4 is disciplinary by definition — it catches the mistake after it is written, matches on text, and is defeated by a call that is present but unreachable.
+
+So the admin client is never exported. `src/app/remoteDataSource/supabaseServerSide.ts` exports only:
+
+```ts
+export async function adminDb() {
+  await requireSession();
+  return client;
+}
+```
+
+`const db = await adminDb()` becomes both the shortest and the only way to reach patient data, and no expression in the codebase yields an ungated admin client. The PR 4 `grep` stays as a cheap backstop, not as the primary defense.
+
+`requireSession()` **throws** `UnauthorizedError` rather than returning a result — a forgotten `if (!result.ok)` continues silently, while a thrown error cannot be ignored. But a bare throw surfaces as a **500**, not the 401 this spec originally claimed, which would leave the login page unable to distinguish "session expired" from "server broken". So a shared wrapper maps `UnauthorizedError` to a 401 `NextResponse` in Route Handlers and to `redirect("/")` in Server Components.
+
+`proxy.ts` is a second layer, never the only one.
 
 ## Delivery
 
@@ -94,6 +128,7 @@ Removing `typescript.ignoreBuildErrors` from `next.config.mjs` was originally sc
 
 1. `curl` `/rest/v1/pacientes` with the publishable key. Today it returns the whole table; after PR 4 it must return empty or 401.
 2. `grep` for the key and for `supabase.co` across `.next/static/`. Zero matches required.
+3. **Forged-cookie check.** `curl` a protected endpoint with a hand-written `lab_session` cookie carrying a syntactically valid but unsigned token, and assert **401**. Checks 1 and 2 both pass while the app is wide open to a forged cookie — this is the check that would have caught the original design's bypass, and it is the reason the script exists at all.
 
 Manual, in the browser: `document.cookie` exposes no token, and DevTools shows the session cookie flagged `HttpOnly`.
 
