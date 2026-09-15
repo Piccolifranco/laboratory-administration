@@ -5,7 +5,8 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
-import { Paciente, Visitas } from "../../../types/supabase";
+import { Visitas } from "../../../types/supabase";
+import type { PacienteListItem } from "@/app/(app)/pacientes/types";
 import { Button, ButtonProps } from "@headlessui/react";
 import Dialog from "./Dialog";
 import { useState } from "react";
@@ -27,8 +28,8 @@ export function EditPaciente({
   paciente,
   onEditPaciente,
 }: {
-  paciente: Paciente;
-  onEditPaciente: (paciente: Paciente) => void;
+  paciente: PacienteListItem;
+  onEditPaciente: (paciente: PacienteListItem) => void;
 }) {
   const handleClick = () => {
     onEditPaciente(paciente);

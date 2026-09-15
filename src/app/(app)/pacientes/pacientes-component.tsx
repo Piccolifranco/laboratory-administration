@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Paciente } from "@/types/supabase";
+import type { PacienteListItem } from "./types";
 import Dialog from "@/app/ui/Dialog";
 import { NewPacienteDialogBody } from "@/app/ui/NewPacienteDialog/NewPacienteDialogBody";
 import { InvoicesTableSkeleton } from "@/app/ui/skeletons";
@@ -22,12 +22,12 @@ const Pacientes = ({
   isCreatePacienteOpen,
   isEditPacienteOpen,
 }: PacientesProps) => {
-  const [selectedPaciente, setSelectedPaciente] = useState<Paciente | null>(null);
+  const [selectedPaciente, setSelectedPaciente] = useState<PacienteListItem | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm] = useDebounce(searchTerm, 400);
   const { pacientes, loading, hasMore, fetchNext, error } = useInfinitePacientes(debouncedSearchTerm);
 
-  const handleEditPaciente = (paciente: Paciente) => {
+  const handleEditPaciente = (paciente: PacienteListItem) => {
     setSelectedPaciente(paciente);
   };
 
