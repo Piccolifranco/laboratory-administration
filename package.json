@@ -27,8 +27,7 @@
     "react-infinite-scroll-component": "^7.2.0",
     "react-toastify": "^11.1.0",
     "server-only": "^0.0.1",
-    "use-debounce": "^10.1.1",
-    "zustand": "^5.0.13"
+    "use-debounce": "^10.1.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
