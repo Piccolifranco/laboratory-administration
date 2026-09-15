@@ -39,14 +39,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Sidebar: off-canvas drawer on mobile, static column on desktop */}
       <div
         className={clsx(
-          "fixed inset-y-0 left-0 z-40 transform transition-transform duration-200 md:static md:translate-x-0",
+          "fixed inset-y-0 left-0 z-40 transform transition-transform duration-200 md:sticky md:top-0 md:h-screen md:self-start md:translate-x-0",
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <Sidebar onNavigate={close} />
       </div>
 
-      <main className="min-h-screen flex-1">{children}</main>
+      <main className="min-h-screen flex-1 px-4 sm:px-6 lg:px-8">{children}</main>
     </div>
   );
 }
