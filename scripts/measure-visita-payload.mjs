@@ -203,6 +203,22 @@ for (const unknownType of ["", "noExiste"]) {
   );
 }
 
+// --- Invariant 3: a known type whose block is missing is left untouched ---
+// The case closest to the line: `type` names a real diagnosis, but that block
+// was never stored. Trimming would drop the other 67 and leave a report with no
+// content at all — present in the list, empty inside, nothing looking wrong.
+{
+  const input = newReport({ type: "pap" });
+  delete input.pap;
+  const before = JSON.stringify(input);
+  const result = trimVisita(input);
+  check(
+    result === input && JSON.stringify(result) === before,
+    `a report whose type names a missing block is returned unchanged ` +
+      `(${Object.keys(result).length} keys kept)`
+  );
+}
+
 console.log("");
 if (failures.length > 0) {
   console.error(`FAILED: ${failures.length} assertion(s) did not hold.`);

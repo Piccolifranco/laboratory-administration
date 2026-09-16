@@ -32,6 +32,12 @@ export function trimVisita(visita: Visitas): Visitas {
   if (!visita || typeof visita !== "object") return visita;
   if (!visita.type || !DIAGNOSIS_KEYS.has(visita.type)) return visita;
 
+  // The named block has to actually be there. A report whose `type` is a known
+  // diagnosis but whose block was never stored would otherwise be trimmed to
+  // nothing at all — still listed, entirely empty, and nothing about it looking
+  // wrong. Keeping 32KB of unused template is the cheaper mistake.
+  if ((visita as Record<string, unknown>)[visita.type] == null) return visita;
+
   const trimmed: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(visita)) {
     if (!DIAGNOSIS_KEYS.has(key) || key === visita.type) {
