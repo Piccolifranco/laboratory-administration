@@ -1,33 +1,39 @@
 "use client";
 import React from "react";
-import { Paciente } from "../../../../types/supabase";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { addPaciente } from "../../remoteDataSource/supabase";
+import { createPacienteAction } from "@/app/remoteDataSource/pacientesActions";
+import type { PacienteEditableFields } from "@/app/(app)/pacientes/types";
 import { useRemoveQueryParam } from "@/app/utils/removeQueryParams";
 import { useRouter } from "next/navigation";
 
-function NewPacienteDialogBody() {
+interface NewPacienteDialogBodyProps {
+  /** Called after a successful save so the list can reload its rows. */
+  onSaved?: () => void;
+}
+
+function NewPacienteDialogBody({ onSaved }: NewPacienteDialogBodyProps) {
   const { removeQueryParams } = useRemoveQueryParam();
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<Paciente>();
+  } = useForm<PacienteEditableFields>();
 
   const router = useRouter();
 
-  const onSubmit: SubmitHandler<Paciente> = async (data) => {
-    const { data: pacienteAdded, error } = await addPaciente(data);
+  const onSubmit: SubmitHandler<PacienteEditableFields> = async (data) => {
+    const result = await createPacienteAction(data);
 
     removeQueryParams();
-    if (error) {
-      console.error("Error al agregar paciente:", error);
-      // Puedes mostrar un mensaje de error en la interfaz de usuario
-    } else {
-      console.log("Paciente agregado exitosamente:", pacienteAdded);
 
-      // Puedes mostrar un mensaje de éxito en la interfaz de usuario
+    if (!result.ok) {
+      console.error(result.message);
+      return;
     }
+
+    // The list is fetched client-side, so router.refresh() alone would leave
+    // the new patient missing from the table until a manual reload.
+    onSaved?.();
     router.refresh();
   };
 
