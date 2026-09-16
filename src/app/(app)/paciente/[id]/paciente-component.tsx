@@ -29,33 +29,47 @@ function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
   const reorderedVisitas = [...localVisitas].reverse();
   const { removeQueryParams } = useRemoveQueryParam();
   const onSubmitVisita = async (visita: Visitas) => {
-    const visitaId = crypto.randomUUID();
-    const visitaWithId = { ...visita, id: visitaId };
-    if (!visitaToEdit) {
-      const newVisitas = paciente.visitas && paciente.visitas.length > 0
-        ? [...paciente?.visitas, visitaWithId]
-        : [visitaWithId];
-      const result = await saveVisitasAction(paciente.id, newVisitas);
-      if (!result.ok) {
-        console.error(result.message);
+    // Built from `localVisitas`, never from `paciente.visitas`. The latter is
+    // the prop from the server render and does not change after a save, so
+    // adding a second report without reloading the page used to rebuild the
+    // array from stale data and silently drop the first one.
+    let nextVisitas: Visitas[];
+
+    if (visitaToEdit) {
+      const index = localVisitas.findIndex(
+        (candidate) =>
+          candidate === visitaToEdit ||
+          (visitaToEdit.id != null && candidate.id === visitaToEdit.id)
+      );
+
+      // findIndex returns -1 when nothing matches, and `array[-1] = x` creates
+      // a property named "-1" rather than replacing an element — a property
+      // JSON.stringify then drops. The write would report success and change
+      // nothing at all.
+      if (index === -1) {
+        console.error("No se encontró el informe a editar");
         return;
       }
-      setLocalVisitas(newVisitas);
+
+      nextVisitas = localVisitas.map((candidate, i) =>
+        i === index
+          ? { ...visita, id: visitaToEdit.id ?? crypto.randomUUID() }
+          : candidate
+      );
     } else {
-      if (paciente.visitas) {
-        const toEditIndex = paciente?.visitas?.findIndex(
-          (pacienteVisita) => pacienteVisita.id === visitaToEdit.id
-        );
-        const visitasCopy = paciente?.visitas;
-        visitasCopy[toEditIndex] = visita;
-        const result = await saveVisitasAction(paciente.id, visitasCopy);
-        if (!result.ok) {
-          console.error(result.message);
-          return;
-        }
-        setLocalVisitas([...visitasCopy]);
-      }
+      nextVisitas = [...localVisitas, { ...visita, id: crypto.randomUUID() }];
     }
+
+    const result = await saveVisitasAction(paciente.id, nextVisitas);
+    if (!result.ok) {
+      console.error(result.message);
+      return;
+    }
+
+    setLocalVisitas(nextVisitas);
+    // Without this the next "Nuevo informe" would still see a visitaToEdit and
+    // overwrite the report just edited instead of adding one.
+    setVisitaToEdit(undefined);
   };
   const [visitaToEdit, setVisitaToEdit] = useState<Visitas | undefined>(
     undefined
@@ -113,7 +127,9 @@ function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
               <tbody className="bg-surface divide-y divide-border">
                 {reorderedVisitas?.map((visita) => {
                   return (
-                    <tr key={paciente?.id} className="hover:bg-surface-muted">
+                    // The visit's id, not the patient's: every row shared one
+                    // key, so React could not tell the rows apart.
+                    <tr key={visita.id} className="hover:bg-surface-muted">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-fg">
                         {paciente?.firstName}, {paciente?.lastName}
                       </td>
