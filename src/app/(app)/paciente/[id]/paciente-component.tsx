@@ -70,6 +70,11 @@ function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
     // Without this the next "Nuevo informe" would still see a visitaToEdit and
     // overwrite the report just edited instead of adding one.
     setVisitaToEdit(undefined);
+    // The dialog is open because of the ?createVisita=true query param, so
+    // dropping it is what closes it. Only on success: a failed save leaves the
+    // dialog open with the form still filled in, rather than discarding what
+    // the doctor typed.
+    removeQueryParams();
   };
   const [visitaToEdit, setVisitaToEdit] = useState<Visitas | undefined>(
     undefined
