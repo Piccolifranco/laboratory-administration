@@ -49,6 +49,19 @@ Trim in `saveVisitasAction` (`src/app/remoteDataSource/pacientesActions.ts`) so 
 
 **2. Merge the template when editing.** Change the form to `defaultValues: visita ? { ...defaultValues, ...visita } : defaultValues`. Without this, opening a trimmed report and switching its diagnosis type would show empty fields instead of the standard wording, because the other blocks are no longer in the stored object.
 
+## What gets dropped, and the guards on it
+
+**Every diagnosis block except the one named by `visita.type`.** Considered and rejected: keeping blocks that differ from the template. The template *is* the standard wording the doctor uses, so a real PAP block legitimately looks almost identical to it, and "how different counts as edited" is not a judgement this code should be making. If she changed the type, she changed it on purpose, and only the active diagnosis is the report.
+
+Two invariants, both enforced in code rather than trusted:
+
+1. **The array never loses a report.** Trimming maps over the reports one-for-one; a guard asserts the output length equals the input length and aborts the write if it does not. This exists to catch a future refactor turning the `map` into a `filter`, not because `map` can drop elements.
+2. **A report with an unrecognized `type` is left completely untouched.** This is the real hazard: if `type` were empty or named a block that does not exist, trimming would strip all 68 blocks and leave a report that still appears in the list but has no content — worse than a missing one, because nothing looks wrong. The trim fails toward keeping too much, never toward deleting.
+
+Keys absent from the template — `id`, `notes`, and anything added later — pass through untouched. Only the 68 known diagnosis keys are ever candidates for removal.
+
+Because `saveVisitasAction` receives the whole array, saving any one report also trims that patient's other reports. That is intended: it is how existing data shrinks without a migration.
+
 ## Decisions (locked)
 
 - **Its own PR, after the auth hardening round closes.** It changes how clinical records are stored and should not ride along in a PR about access control.
