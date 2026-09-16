@@ -92,6 +92,17 @@ else
   failures=$((failures + 1))
 fi
 
+# --- Check 5: every data entry point gates itself ----------------------------
+# Static, unlike the checks above — it reads the source rather than the running
+# app, and catches a route or action added later without a session check.
+if node "$ROOT/scripts/check-session-coverage.mjs" >/dev/null 2>&1; then
+  echo "PASS  every route and action gates itself behind a session"
+else
+  echo "FAIL  an entry point reaches patient data without a session:"
+  node "$ROOT/scripts/check-session-coverage.mjs" 2>&1 | sed 's/^/        /'
+  failures=$((failures + 1))
+fi
+
 echo
 if [ "$failures" -ne 0 ]; then
   echo "$failures check(s) FAILED"
