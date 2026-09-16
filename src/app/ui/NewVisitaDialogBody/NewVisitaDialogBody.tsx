@@ -19,7 +19,12 @@ function NewVisitaDialogBody({
   visita,
 }: NewVisitaDialogBody) {
   const { register, watch, handleSubmit, reset } = useForm<Visitas>({
-    defaultValues: visita || defaultValues,
+    // The stored report wins, the template fills the gaps. Reports are trimmed
+    // to their own diagnosis block on save, so without this merge, switching
+    // the type while editing would show empty fields instead of the standard
+    // wording. Untrimmed older reports are unaffected — their own blocks simply
+    // override more of the template.
+    defaultValues: visita ? { ...defaultValues, ...visita } : defaultValues,
   });
   const router = useRouter();
   const type = watch("type");
