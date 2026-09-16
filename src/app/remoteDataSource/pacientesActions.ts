@@ -1,6 +1,7 @@
 "use server";
 
 import { adminDb } from "./supabaseServerSide";
+import { trimVisita } from "./trimVisita";
 import { isUnauthorized } from "@/app/utils/session";
 import type { PacienteEditableFields } from "@/app/(app)/pacientes/types";
 import type { Paciente, Visitas } from "@/types/supabase";
@@ -89,10 +90,22 @@ export async function saveVisitasAction(
   visitas: Visitas[]
 ): Promise<ActionResult<Paciente>> {
   try {
+    const trimmed = visitas.map(trimVisita);
+
+    // Invariant: trimming shrinks each report, never the array. `map` cannot
+    // drop elements, so this guards against a future refactor turning it into
+    // a filter — losing a report is the one outcome that must never happen.
+    if (trimmed.length !== visitas.length) {
+      console.error(
+        `Trim changed the report count (${visitas.length} -> ${trimmed.length}); refusing to write.`
+      );
+      return { ok: false, reason: "error", message: "No se pudo guardar el informe" };
+    }
+
     const db = await adminDb();
     const { data, error } = await db
       .from("pacientes")
-      .update({ visitas })
+      .update({ visitas: trimmed })
       .eq("id", id)
       .select()
       .single();
