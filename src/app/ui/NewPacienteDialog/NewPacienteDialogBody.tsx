@@ -1,8 +1,8 @@
 "use client";
 import React from "react";
-import { Paciente } from "../../../../types/supabase";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { addPaciente } from "../../remoteDataSource/supabase";
+import { createPacienteAction } from "@/app/remoteDataSource/pacientesActions";
+import type { PacienteEditableFields } from "@/app/(app)/pacientes/types";
 import { useRemoveQueryParam } from "@/app/utils/removeQueryParams";
 import { useRouter } from "next/navigation";
 
@@ -17,17 +17,17 @@ function NewPacienteDialogBody({ onSaved }: NewPacienteDialogBodyProps) {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<Paciente>();
+  } = useForm<PacienteEditableFields>();
 
   const router = useRouter();
 
-  const onSubmit: SubmitHandler<Paciente> = async (data) => {
-    const { data: pacienteAdded, error } = await addPaciente(data);
+  const onSubmit: SubmitHandler<PacienteEditableFields> = async (data) => {
+    const result = await createPacienteAction(data);
 
     removeQueryParams();
 
-    if (error) {
-      console.error("Error al agregar paciente:", error);
+    if (!result.ok) {
+      console.error(result.message);
       return;
     }
 

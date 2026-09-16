@@ -19,8 +19,16 @@ export function useInfinitePacientes(searchTerm?: string) {
         const response = await fetch(`/api/pacientes?${params}`);
 
         if (response.status === 401) {
-          // The session lapsed while the tab was open. A full navigation lets
-          // the proxy do the redirecting rather than duplicating that logic.
+          // The cookie is present and well-formed, but its token no longer
+          // verifies — a rotated signing key, a session revoked from another
+          // device, or one forged by hand.
+          //
+          // Navigating straight to "/" would loop forever: proxy.ts only
+          // inspects the cookie's shape, so it still considers us logged in and
+          // bounces "/" back to "/pacientes", which fetches, gets 401, and
+          // navigates again. Clearing the session first is what breaks the
+          // cycle — with no cookie, the proxy lets the login page render.
+          await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
           window.location.href = "/";
           return;
         }

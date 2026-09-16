@@ -1,35 +1,48 @@
-import { supabase } from "@/app/utils/supabaseClient";
+import { notFound, redirect } from "next/navigation";
+import { adminDb } from "@/app/remoteDataSource/supabaseServerSide";
+import { isUnauthorized } from "@/app/utils/session";
 import { PacienteComponent } from "./paciente-component";
-import InvoiceStatus from "@/app/ui/status";
-import { format } from "date-fns";
-import Image from "next/image";
-import Link from "next/link";
-import React from "react";
 
 export default async function PacientePage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ createVisita: string }>;
+  searchParams: Promise<{ createVisita?: string }>;
 }) {
   const { id: pacienteId } = await params;
   const { createVisita } = await searchParams;
-  const fetchedPaciente = await supabase
+
+  // The route param is a string; the column is a number. Passing the string
+  // worked only because PostgREST coerced it, and it was one of the repo's
+  // pre-existing type errors.
+  const id = Number(pacienteId);
+  if (!Number.isInteger(id)) notFound();
+
+  let db;
+  try {
+    db = await adminDb();
+  } catch (error) {
+    // A Server Component cannot return 401 usefully, and it cannot refresh the
+    // cookie either. Sending the visitor to the login screen is the honest
+    // outcome; proxy.ts handles the same case for navigations.
+    if (isUnauthorized(error)) redirect("/");
+    throw error;
+  }
+
+  const { data: paciente, error } = await db
     .from("pacientes")
     .select()
-    .eq("id", pacienteId)
+    .eq("id", id)
     .single();
-  const paciente = fetchedPaciente.data;
-  const visitas = fetchedPaciente.data?.visitas;
-  const modalOpen = createVisita === "true";
+
+  if (error || !paciente) notFound();
+
   return (
-    paciente && (
-      <PacienteComponent
-        paciente={paciente}
-        modalOpen={modalOpen}
-        visitas={visitas ?? []}
-      />
-    )
+    <PacienteComponent
+      paciente={paciente}
+      modalOpen={createVisita === "true"}
+      visitas={paciente.visitas ?? []}
+    />
   );
 }

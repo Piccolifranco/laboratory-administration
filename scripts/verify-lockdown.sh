@@ -55,16 +55,32 @@ case "$code:$target" in
     ;;
 esac
 
-# --- Check 3: no service_role secret in the client bundle --------------------
+# --- Check 3: no Supabase credentials at all in the client bundle ------------
+# From PR 3 on the browser holds no database credential whatsoever: every read
+# and write goes through a session-gated route handler or server action. Until
+# then the publishable key and the project ref were both inlined into the
+# bundle, which was only safe because RLS was off — the very thing being fixed.
+# The project ref is included because it identifies the database to attack even
+# without a key in hand.
 if [ ! -d "$ROOT/.next/static" ]; then
   echo "FAIL  no client bundle at .next/static (run: pnpm build)"
   failures=$((failures + 1))
-elif grep -rl "sb_secret" "$ROOT/.next/static/" >/dev/null 2>&1; then
-  echo "FAIL  sb_secret found in the client bundle:"
-  grep -rl "sb_secret" "$ROOT/.next/static/" 2>/dev/null | sed 's/^/        /'
-  failures=$((failures + 1))
 else
-  echo "PASS  no sb_secret in the client bundle"
+  leaked=""
+  for needle in sb_secret sb_publishable lylnvhhzhyqlbbjgymws; do
+    if grep -rl "$needle" "$ROOT/.next/static/" >/dev/null 2>&1; then
+      leaked="$leaked $needle"
+    fi
+  done
+  if [ -n "$leaked" ]; then
+    echo "FAIL  supabase credentials in the client bundle:$leaked"
+    for needle in $leaked; do
+      grep -rl "$needle" "$ROOT/.next/static/" 2>/dev/null | sed 's/^/        /'
+    done
+    failures=$((failures + 1))
+  else
+    echo "PASS  no supabase credentials in the client bundle"
+  fi
 fi
 
 # --- Check 4: the list endpoint requires a session ----------------------------
