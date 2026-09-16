@@ -15,6 +15,11 @@ export class UnauthorizedError extends Error {
   }
 }
 
+/** True when the error came from `requireSession()` rejecting a request. */
+export function isUnauthorized(error: unknown): error is UnauthorizedError {
+  return error instanceof UnauthorizedError;
+}
+
 /** Reads the session cookie, or null when absent or malformed. */
 export async function readSession(): Promise<StoredSession | null> {
   const store = await cookies();

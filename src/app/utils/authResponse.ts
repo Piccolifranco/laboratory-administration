@@ -1,11 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
-import { UnauthorizedError } from "./session";
 
-/** True when the error came from `requireSession()` rejecting a request. */
-export function isUnauthorized(error: unknown): error is UnauthorizedError {
-  return error instanceof UnauthorizedError;
-}
+export { isUnauthorized } from "./session";
 
 /**
  * The 401 every Route Handler returns when `requireSession()` throws. Carries
