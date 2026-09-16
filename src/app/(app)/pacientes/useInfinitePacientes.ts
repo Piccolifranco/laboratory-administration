@@ -60,5 +60,19 @@ export function useInfinitePacientes(searchTerm?: string) {
     }
   };
 
-  return { pacientes, loading, hasMore, fetchNext, error };
+  /**
+   * Reloads the list from page 0.
+   *
+   * Callers must invoke this after creating, editing or deleting a patient.
+   * `router.refresh()` is not enough any more: it revalidates Server
+   * Components, and since this list is fetched client-side the screen would
+   * keep showing stale rows until a manual reload.
+   */
+  const refetch = useCallback(() => {
+    setPage(0);
+    setHasMore(true);
+    fetchPacientes(0);
+  }, [fetchPacientes]);
+
+  return { pacientes, loading, hasMore, fetchNext, error, refetch };
 }

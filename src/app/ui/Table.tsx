@@ -11,6 +11,8 @@ import PatientTableSkeleton from "./PatientTableSkeleton";
 type TableProps = {
   pacientes: PacienteListItem[];
   onEditPaciente: (paciente: PacienteListItem) => void;
+  /** Called after a successful delete so the list can reload its rows. */
+  onDeleted?: () => void;
   loading?: boolean;
 };
 
@@ -19,7 +21,12 @@ type SortConfig = {
   direction: "asc" | "desc";
 };
 
-const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
+const Table = ({
+  pacientes,
+  onEditPaciente,
+  onDeleted,
+  loading = false,
+}: TableProps) => {
   const router = useRouter();
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
@@ -110,7 +117,11 @@ const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
                   <>
                     {sortedPacientes.map((paciente) => {
                   const handleDeletePaciente = async () => {
-                    await deletePaciente(paciente.id);
+                    const deleted = await deletePaciente(paciente.id);
+                    if (!deleted) return;
+                    // The list is fetched client-side; router.refresh() alone leaves the
+                    // deleted row on screen until a manual reload.
+                    onDeleted?.();
                     router.refresh();
                   };
                   return (
@@ -172,7 +183,11 @@ const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
         ) : (
           sortedPacientes.map((paciente) => {
             const handleDeletePacienteCard = async () => {
-              await deletePaciente(paciente.id);
+              const deleted = await deletePaciente(paciente.id);
+              if (!deleted) return;
+              // The list is fetched client-side; router.refresh() alone leaves the
+              // deleted row on screen until a manual reload.
+              onDeleted?.();
               router.refresh();
             };
             return (

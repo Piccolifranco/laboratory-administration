@@ -6,7 +6,12 @@ import { addPaciente } from "../../remoteDataSource/supabase";
 import { useRemoveQueryParam } from "@/app/utils/removeQueryParams";
 import { useRouter } from "next/navigation";
 
-function NewPacienteDialogBody() {
+interface NewPacienteDialogBodyProps {
+  /** Called after a successful save so the list can reload its rows. */
+  onSaved?: () => void;
+}
+
+function NewPacienteDialogBody({ onSaved }: NewPacienteDialogBodyProps) {
   const { removeQueryParams } = useRemoveQueryParam();
   const {
     register,
@@ -20,14 +25,15 @@ function NewPacienteDialogBody() {
     const { data: pacienteAdded, error } = await addPaciente(data);
 
     removeQueryParams();
+
     if (error) {
       console.error("Error al agregar paciente:", error);
-      // Puedes mostrar un mensaje de error en la interfaz de usuario
-    } else {
-      console.log("Paciente agregado exitosamente:", pacienteAdded);
-
-      // Puedes mostrar un mensaje de éxito en la interfaz de usuario
+      return;
     }
+
+    // The list is fetched client-side, so router.refresh() alone would leave
+    // the new patient missing from the table until a manual reload.
+    onSaved?.();
     router.refresh();
   };
 

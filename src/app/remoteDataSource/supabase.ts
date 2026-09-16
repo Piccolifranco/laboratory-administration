@@ -29,11 +29,15 @@ export const updatePaciente = async (
       obraSocial: updates.obraSocial,
     })
     .eq("id", id)
+    // .select() is required: without it PostgREST replies 204 with no body, so
+    // both `data` and `error` come back null and a successful write is
+    // indistinguishable from a failed one. Callers check the return value.
+    .select()
     .single();
 
   if (error) {
     console.error("Error updating paciente:", error);
-    return error;
+    return null;
   }
   return data;
 };
@@ -50,11 +54,15 @@ export const updatePacienteVisitas = async (id: number, visitas: Visitas[]) => {
     .from("pacientes")
     .update({ visitas })
     .eq("id", id)
+    // See updatePaciente: without .select() a successful write returns null and
+    // looks identical to a failure. This one matters most — a report that fails
+    // to save silently is a lost medical record.
+    .select()
     .single();
 
   if (error) {
     console.error("Error updating visitas:", error);
-    return error;
+    return null;
   }
   return data;
 };
@@ -64,12 +72,14 @@ export const deletePaciente = async (id: number) => {
     .from("pacientes")
     .delete()
     .eq("id", id)
+    // Same as the updates above: without .select() the deleted row is not
+    // returned and a success reads as null.
+    .select()
     .single();
 
   if (error) {
     console.error("Error deleting paciente:", error);
-    return error;
+    return null;
   }
-  console.log("Paciente deleted:", data);
   return data;
 };

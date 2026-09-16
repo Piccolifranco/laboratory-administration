@@ -11,9 +11,14 @@ import { useRouter } from "next/navigation";
 
 interface EditPacienteDialogBodyProps {
   paciente: PacienteListItem; // Los datos del paciente a editar
+  /** Called after a successful save so the list can reload its rows. */
+  onSaved?: () => void;
 }
 
-function EditPacienteDialogBody({ paciente }: EditPacienteDialogBodyProps) {
+function EditPacienteDialogBody({
+  paciente,
+  onSaved,
+}: EditPacienteDialogBodyProps) {
   const { removeQueryParams } = useRemoveQueryParam();
   const {
     register,
@@ -33,14 +38,15 @@ function EditPacienteDialogBody({ paciente }: EditPacienteDialogBodyProps) {
   const onSubmit: SubmitHandler<PacienteEditableFields> = async (data) => {
     const updatedPaciente = await updatePaciente(paciente.id, data);
     removeQueryParams();
-    console.log({ updatedPaciente });
+
     if (!updatedPaciente) {
       console.error("Error al actualizar paciente");
-      // Puedes mostrar un mensaje de error en la interfaz de usuario
-    } else {
-      console.log("Paciente actualizado exitosamente:", updatedPaciente);
-      // Puedes mostrar un mensaje de éxito en la interfaz de usuario
+      return;
     }
+
+    // The list is fetched client-side, so router.refresh() alone would leave
+    // the old values on screen until a manual reload.
+    onSaved?.();
     router.refresh();
   };
 
