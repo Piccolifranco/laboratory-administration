@@ -78,7 +78,8 @@ export function DeletePaciente(props: ButtonProps) {
   return (
     <>
       <Dialog
-        width="w-fit"
+        // A one-line confirmation; w-fit would now fight the panel's w-full.
+        width="md:max-w-md"
         dialogTitle="Eliminar Paciente"
         dialogBody={
           <div className="pb-4 pt-4 font-medium text-lg">

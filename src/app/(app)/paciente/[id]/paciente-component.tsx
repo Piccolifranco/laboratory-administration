@@ -215,6 +215,9 @@ function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
       </div>
 
       <Dialog
+        // The report form is the widest in the app — many diagnosis fields,
+        // and macro/micro free text. It needs more room than the default cap.
+        width="md:max-w-5xl"
         dialogTitle="Nuevo informe"
         dialogBody={
           <NewVisitaDialogBody
