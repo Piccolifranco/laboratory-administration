@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Dialog from "@/app/ui/Dialog";
-import { updatePacienteVisitas } from "@/app/remoteDataSource/supabase";
+import { saveVisitasAction } from "@/app/remoteDataSource/pacientesActions";
 import {
   CreateVisita,
   DeletePaciente,
@@ -35,7 +35,11 @@ function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
       const newVisitas = paciente.visitas && paciente.visitas.length > 0
         ? [...paciente?.visitas, visitaWithId]
         : [visitaWithId];
-      await updatePacienteVisitas(paciente.id, newVisitas);
+      const result = await saveVisitasAction(paciente.id, newVisitas);
+      if (!result.ok) {
+        console.error(result.message);
+        return;
+      }
       setLocalVisitas(newVisitas);
     } else {
       if (paciente.visitas) {
@@ -44,7 +48,11 @@ function PacienteComponent({ paciente, visitas, modalOpen }: PacienteProps) {
         );
         const visitasCopy = paciente?.visitas;
         visitasCopy[toEditIndex] = visita;
-        await updatePacienteVisitas(paciente.id, visitasCopy);
+        const result = await saveVisitasAction(paciente.id, visitasCopy);
+        if (!result.ok) {
+          console.error(result.message);
+          return;
+        }
         setLocalVisitas([...visitasCopy]);
       }
     }

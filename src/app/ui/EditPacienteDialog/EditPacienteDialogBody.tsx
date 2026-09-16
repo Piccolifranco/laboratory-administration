@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
-import { updatePaciente } from "../../remoteDataSource/supabase";
+import { updatePacienteAction } from "@/app/remoteDataSource/pacientesActions";
 import type {
   PacienteEditableFields,
   PacienteListItem,
@@ -36,11 +36,11 @@ function EditPacienteDialogBody({
   });
   const router = useRouter();
   const onSubmit: SubmitHandler<PacienteEditableFields> = async (data) => {
-    const updatedPaciente = await updatePaciente(paciente.id, data);
+    const result = await updatePacienteAction(paciente.id, data);
     removeQueryParams();
 
-    if (!updatedPaciente) {
-      console.error("Error al actualizar paciente");
+    if (!result.ok) {
+      console.error(result.message);
       return;
     }
 

@@ -3,7 +3,7 @@ import { DeletePaciente, EditPaciente } from "./buttons";
 import type { PacienteListItem } from "@/app/(app)/pacientes/types";
 import { format } from "date-fns";
 import Link from "next/link";
-import { deletePaciente } from "../remoteDataSource/supabase";
+import { deletePacienteAction } from "../remoteDataSource/pacientesActions";
 import { useRouter } from "next/navigation";
 
 import PatientTableSkeleton from "./PatientTableSkeleton";
@@ -117,8 +117,11 @@ const Table = ({
                   <>
                     {sortedPacientes.map((paciente) => {
                   const handleDeletePaciente = async () => {
-                    const deleted = await deletePaciente(paciente.id);
-                    if (!deleted) return;
+                    const result = await deletePacienteAction(paciente.id);
+                    if (!result.ok) {
+                      console.error(result.message);
+                      return;
+                    }
                     // The list is fetched client-side; router.refresh() alone leaves the
                     // deleted row on screen until a manual reload.
                     onDeleted?.();
@@ -183,8 +186,11 @@ const Table = ({
         ) : (
           sortedPacientes.map((paciente) => {
             const handleDeletePacienteCard = async () => {
-              const deleted = await deletePaciente(paciente.id);
-              if (!deleted) return;
+              const result = await deletePacienteAction(paciente.id);
+              if (!result.ok) {
+                console.error(result.message);
+                return;
+              }
               // The list is fetched client-side; router.refresh() alone leaves the
               // deleted row on screen until a manual reload.
               onDeleted?.();
