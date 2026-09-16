@@ -1,46 +1,48 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/app/utils/supabaseClient";
-import { Paciente } from "@/types/supabase";
-
-const PAGE_SIZE = 20;
+import type { PacienteListItem } from "./types";
 
 export function useInfinitePacientes(searchTerm?: string) {
-  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [pacientes, setPacientes] = useState<PacienteListItem[]>([]);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPacientes = useCallback(async (pageIndex: number) => {
-    setLoading(true);
-    setError(null);
-    let from = pageIndex * PAGE_SIZE;
-    let to = from + PAGE_SIZE - 1;
-    let query = supabase
-      .from("pacientes")
-      .select()
-      // Newest patients first. Order the full set server-side BEFORE paginating
-      // so .range() walks a stable, globally-ordered list. The id tiebreaker
-      // keeps pagination stable when two rows share a createdAt timestamp.
-      .order("createdAt", { ascending: false })
-      .order("id", { ascending: false });
-    if (searchTerm) {
-      query = query.textSearch("lastName", searchTerm);
-    }
-    const { data, error } = await query.range(from, to);
-    if (error) {
-      setError(error.message);
-      setLoading(false);
-      return;
-    }
-    if (data) {
-      setPacientes((prev) => (pageIndex === 0 ? data : [...prev, ...data]));
-      setHasMore(data.length === PAGE_SIZE);
-    } else {
-      setHasMore(false);
-    }
-    setLoading(false);
-  }, [searchTerm]);
+  const fetchPacientes = useCallback(
+    async (pageIndex: number) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const params = new URLSearchParams({ page: String(pageIndex) });
+        if (searchTerm) params.set("q", searchTerm);
+
+        const response = await fetch(`/api/pacientes?${params}`);
+
+        if (response.status === 401) {
+          // The session lapsed while the tab was open. A full navigation lets
+          // the proxy do the redirecting rather than duplicating that logic.
+          window.location.href = "/";
+          return;
+        }
+
+        if (!response.ok) {
+          setError("No se pudieron cargar los pacientes");
+          return;
+        }
+
+        const data = await response.json();
+        setPacientes((prev) =>
+          pageIndex === 0 ? data.pacientes : [...prev, ...data.pacientes]
+        );
+        setHasMore(Boolean(data.hasMore));
+      } catch {
+        setError("No se pudo conectar. Revisá tu conexión e intentá de nuevo.");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [searchTerm]
+  );
 
   useEffect(() => {
     setPacientes([]);
@@ -58,5 +60,19 @@ export function useInfinitePacientes(searchTerm?: string) {
     }
   };
 
-  return { pacientes, loading, hasMore, fetchNext, error };
+  /**
+   * Reloads the list from page 0.
+   *
+   * Callers must invoke this after creating, editing or deleting a patient.
+   * `router.refresh()` is not enough any more: it revalidates Server
+   * Components, and since this list is fetched client-side the screen would
+   * keep showing stale rows until a manual reload.
+   */
+  const refetch = useCallback(() => {
+    setPage(0);
+    setHasMore(true);
+    fetchPacientes(0);
+  }, [fetchPacientes]);
+
+  return { pacientes, loading, hasMore, fetchNext, error, refetch };
 }

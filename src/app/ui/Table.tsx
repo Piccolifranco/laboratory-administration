@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { DeletePaciente, EditPaciente } from "./buttons";
-import { Paciente } from "../../../types/supabase";
+import type { PacienteListItem } from "@/app/(app)/pacientes/types";
 import { format } from "date-fns";
 import Link from "next/link";
 import { deletePaciente } from "../remoteDataSource/supabase";
@@ -9,17 +9,24 @@ import { useRouter } from "next/navigation";
 import PatientTableSkeleton from "./PatientTableSkeleton";
 
 type TableProps = {
-  pacientes: Paciente[];
-  onEditPaciente: (paciente: Paciente) => void;
+  pacientes: PacienteListItem[];
+  onEditPaciente: (paciente: PacienteListItem) => void;
+  /** Called after a successful delete so the list can reload its rows. */
+  onDeleted?: () => void;
   loading?: boolean;
 };
 
 type SortConfig = {
-  key: keyof Paciente | "ultimaVisita";
+  key: keyof PacienteListItem;
   direction: "asc" | "desc";
 };
 
-const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
+const Table = ({
+  pacientes,
+  onEditPaciente,
+  onDeleted,
+  loading = false,
+}: TableProps) => {
   const router = useRouter();
   const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
 
@@ -30,18 +37,13 @@ const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
     sorted.sort((a, b) => {
       const key = sortConfig.key;
 
-      let aValue =
-        key === "ultimaVisita"
-          ? a.visitas?.[0]?.date
-            ? new Date(a.visitas[0].date)
-            : null
-          : a[key as keyof Paciente] || "";
-      let bValue =
-        key === "ultimaVisita"
-          ? b.visitas?.[0]?.date
-            ? new Date(b.visitas[0].date)
-            : null
-          : b[key as keyof Paciente] || "";
+      const aRaw = a[key];
+      const bRaw = b[key];
+
+      const aValue =
+        key === "ultimaVisita" && aRaw ? new Date(aRaw as string) : aRaw ?? "";
+      const bValue =
+        key === "ultimaVisita" && bRaw ? new Date(bRaw as string) : bRaw ?? "";
 
       // Handle null/undefined values
       if (aValue === null || aValue === undefined)
@@ -58,7 +60,7 @@ const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
     return sorted;
   }, [pacientes, sortConfig]);
 
-  const handleSort = (key: keyof Paciente | "ultimaVisita") => {
+  const handleSort = (key: keyof PacienteListItem) => {
     setSortConfig((prev) => {
       if (prev?.key === key) {
         return {
@@ -90,9 +92,7 @@ const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
                       key={key}
                       scope="col"
                       className="px-6 py-3 text-left text-sm font-medium text-fg-muted uppercase tracking-wider cursor-pointer"
-                      onClick={() =>
-                        handleSort(key as keyof Paciente | "ultimaVisita")
-                      }
+                      onClick={() => handleSort(key as keyof PacienteListItem)}
                     >
                       {label}
                       {sortConfig?.key === key && (
@@ -117,7 +117,11 @@ const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
                   <>
                     {sortedPacientes.map((paciente) => {
                   const handleDeletePaciente = async () => {
-                    await deletePaciente(paciente.id);
+                    const deleted = await deletePaciente(paciente.id);
+                    if (!deleted) return;
+                    // The list is fetched client-side; router.refresh() alone leaves the
+                    // deleted row on screen until a manual reload.
+                    onDeleted?.();
                     router.refresh();
                   };
                   return (
@@ -140,12 +144,9 @@ const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
                         {paciente?.obraSocial ?? "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-md text-fg-subtle">
-                        {paciente?.visitas
-                          ? `${format(
-                              new Date(paciente.visitas[0].date),
-                              "dd/MM/yyyy"
-                            )}`
-                          : ""}
+                        {paciente.ultimaVisita
+                          ? format(new Date(paciente.ultimaVisita), "dd/MM/yyyy")
+                          : "-"}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-fg-subtle">
                         <div className="flex gap-3">
@@ -182,7 +183,11 @@ const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
         ) : (
           sortedPacientes.map((paciente) => {
             const handleDeletePacienteCard = async () => {
-              await deletePaciente(paciente.id);
+              const deleted = await deletePaciente(paciente.id);
+              if (!deleted) return;
+              // The list is fetched client-side; router.refresh() alone leaves the
+              // deleted row on screen until a manual reload.
+              onDeleted?.();
               router.refresh();
             };
             return (
@@ -225,11 +230,8 @@ const Table = ({ pacientes, onEditPaciente, loading = false }: TableProps) => {
                   <div className="col-span-2">
                     <dt className="inline font-medium">Última visita: </dt>
                     <dd className="inline">
-                      {paciente?.visitas
-                        ? format(
-                            new Date(paciente.visitas[0].date),
-                            "dd/MM/yyyy"
-                          )
+                      {paciente.ultimaVisita
+                        ? format(new Date(paciente.ultimaVisita), "dd/MM/yyyy")
                         : "-"}
                     </dd>
                   </div>
